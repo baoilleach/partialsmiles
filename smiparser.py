@@ -5,6 +5,10 @@ bondchars = "-=#$\\/"
 bondorders = [1, 2, 3, 4, 1, 1]
 CLOSE, OPEN = range(2)
 
+aromatic_list = ["c", "n", "p", "o", "s", "te", "se", "b"] # more?
+aromatic_set = set(aromatic_list)
+firstLetterOfElements = set(x[0] for x in list(elements.keys()) + aromatic_list)
+
 def ToBondOrder(bondchar):
     idx = bondchars.index(bondchar)
     return bondorders[idx] # returns 1 for empty string
@@ -201,80 +205,104 @@ class SmilesParser:
     def atEnd(self):
         return self.idx == self.N
 
-    def consume(self, char):
-        if self.notAtEnd() and self.smi[self.idx] == char:
-            self.idx += 1
-            return True
-        return False
+    def incrementAndTestForError(self):
+        self.idx += 1
+        if self.atEnd():
+            if self.partial:
+                return True, None
+            else:
+                return True, "An open square brackets is present without the corresponding close square brackets"
+        return False, None
 
     def parseAtom(self):
         x = self.smi[self.idx]
         bondchar = self.smi[self.idx-1] if self.idx > 0 and self.smi[self.idx-1] in bondchars else ""
 
         if x == '[':
-            self.idx += 1
-            if self.atEnd():
-                if self.partial:
-                    return None
-                else:
-                    return "An open square brackets is present without the corresponding close square brackets"
+            end, msg = self.incrementAndTestForError()
+            if end:
+                return msg
+
+            # Handle isotope
             if self.smi[self.idx].isdigit():
                 isotope = int(self.smi[self.idx])
                 if isotope == 0:
                     return "Isotope value of 0 not allowed"
-                self.idx += 1
-                if self.atEnd():
-                    if self.partial:
-                        return None
-                    else:
-                        return "An open square brackets is present without the corresponding close square brackets"
-                if self.notAtEnd() and self.smi[self.idx].isdigit():
+                end, msg = self.incrementAndTestForError()
+                if end:
+                    return msg
+                if self.smi[self.idx].isdigit():
                     isotope = isotope*10 + int(self.smi[self.idx])
-                    self.idx += 1
-                    if self.notAtEnd() and self.smi[self.idx].isdigit():
+                    end, msg = self.incrementAndTestForError()
+                    if end:
+                        return msg
+                    if self.smi[self.idx].isdigit():
                         isotope = isotope*10 + int(self.smi[self.idx])
-                        self.idx += 1
+                        end, msg = self.incrementAndTestForError()
+                        if end:
+                            return msg
             else:
                 isotope = 0
+
+            # Handle element
+            if self.smi[self.idx] not in firstLetterOfElements:
+                return "An element symbol is required"
             if self.idx+1 < self.N and self.smi[self.idx].upper() + self.smi[self.idx+1] in elements:
                 symbol = self.smi[self.idx:self.idx+2]
-                self.idx += 2
+                self.idx += 1
             else:
                 symbol = self.smi[self.idx]
-                self.idx += 1
-            self.consume("@")
-            self.consume("@")
-            hasH = self.consume("H")
-            if hasH:
-                if self.notAtEnd() and self.smi[self.idx].isdigit():
+            end, msg = self.incrementAndTestForError()
+            if end:
+                return msg
+            
+            # Handle tet stereo
+            if self.smi[self.idx] == '@':
+                end, msg = self.incrementAndTestForError()
+                if end:
+                    return msg
+                if self.smi[self.idx] == '@':
+                    end, msg = self.incrementAndTestForError()
+                    if end:
+                        return msg
+
+            # Handle H count
+            if self.smi[self.idx] == 'H':
+                end, msg = self.incrementAndTestForError()
+                if end:
+                    return msg
+                if self.smi[self.idx].isdigit():
                     hcount = int(self.smi[self.idx])
-                    self.idx += 1
+                    end, msg = self.incrementAndTestForError()
+                    if end:
+                        return msg
                 else:
                     hcount = 1
             else:
                 hcount = 0
-            hasPlus = self.consume("+")
-            if hasPlus:
-                if self.notAtEnd() and self.smi[self.idx].isdigit():
+
+            # Handle charge
+            if self.smi[self.idx] in "+-":
+                end, msg = self.incrementAndTestForError()
+                if end:
+                    return msg
+                if self.smi[self.idx].isdigit():
                     charge = int(self.smi[self.idx])
-                    self.idx += 1
+                    if self.smi[self.idx] == '-':
+                        charge = -charge
+                    end, msg = self.incrementAndTestForError()
+                    if end:
+                        return msg
                 else:
-                    charge = 1
+                    charge = 1 if self.smi[self.idx] == '+' else -1
             else:
-                hasMinus = self.consume("-")
-                if hasMinus:
-                    if self.notAtEnd() and self.smi[self.idx].isdigit():
-                        charge = -int(self.smi[self.idx])
-                        self.idx += 1
-                    else:
-                        charge = -1
-                else:
-                    charge = 0
-            if self.notAtEnd():
-                if self.smi[self.idx] == ']':
-                    self.idx += 1
-                else:
-                    return "Missing the close bracket"
+                charge = 0
+
+            # Handle close-bracket
+            if self.smi[self.idx] == ']':
+                self.idx += 1
+            else:
+                return "Missing the close bracket"
         elif self.notAtEnd() and self.smi[self.idx:self.idx+2] in ["Cl", "Br"]:
             symbol = self.smi[self.idx:self.idx+2]
             self.idx += 2
