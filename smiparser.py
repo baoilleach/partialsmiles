@@ -205,7 +205,7 @@ class SmilesParser:
     def atEnd(self):
         return self.idx == self.N
 
-    def incrementAndTestForError(self):
+    def incrementAndTestForEnd(self):
         self.idx += 1
         if self.atEnd():
             if self.partial:
@@ -219,7 +219,7 @@ class SmilesParser:
         bondchar = self.smi[self.idx-1] if self.idx > 0 and self.smi[self.idx-1] in bondchars else ""
 
         if x == '[':
-            end, msg = self.incrementAndTestForError()
+            end, msg = self.incrementAndTestForEnd()
             if end:
                 return msg
 
@@ -228,17 +228,17 @@ class SmilesParser:
                 isotope = int(self.smi[self.idx])
                 if isotope == 0:
                     return "Isotope value of 0 not allowed"
-                end, msg = self.incrementAndTestForError()
+                end, msg = self.incrementAndTestForEnd()
                 if end:
                     return msg
                 if self.smi[self.idx].isdigit():
                     isotope = isotope*10 + int(self.smi[self.idx])
-                    end, msg = self.incrementAndTestForError()
+                    end, msg = self.incrementAndTestForEnd()
                     if end:
                         return msg
                     if self.smi[self.idx].isdigit():
                         isotope = isotope*10 + int(self.smi[self.idx])
-                        end, msg = self.incrementAndTestForError()
+                        end, msg = self.incrementAndTestForEnd()
                         if end:
                             return msg
             else:
@@ -252,28 +252,28 @@ class SmilesParser:
                 self.idx += 1
             else:
                 symbol = self.smi[self.idx]
-            end, msg = self.incrementAndTestForError()
+            end, msg = self.incrementAndTestForEnd()
             if end:
                 return msg
             
             # Handle tet stereo
             if self.smi[self.idx] == '@':
-                end, msg = self.incrementAndTestForError()
+                end, msg = self.incrementAndTestForEnd()
                 if end:
                     return msg
                 if self.smi[self.idx] == '@':
-                    end, msg = self.incrementAndTestForError()
+                    end, msg = self.incrementAndTestForEnd()
                     if end:
                         return msg
 
             # Handle H count
             if self.smi[self.idx] == 'H':
-                end, msg = self.incrementAndTestForError()
+                end, msg = self.incrementAndTestForEnd()
                 if end:
                     return msg
                 if self.smi[self.idx].isdigit():
                     hcount = int(self.smi[self.idx])
-                    end, msg = self.incrementAndTestForError()
+                    end, msg = self.incrementAndTestForEnd()
                     if end:
                         return msg
                 else:
@@ -283,14 +283,14 @@ class SmilesParser:
 
             # Handle charge
             if self.smi[self.idx] in "+-":
-                end, msg = self.incrementAndTestForError()
+                end, msg = self.incrementAndTestForEnd()
                 if end:
                     return msg
                 if self.smi[self.idx].isdigit():
                     charge = int(self.smi[self.idx])
                     if self.smi[self.idx] == '-':
                         charge = -charge
-                    end, msg = self.incrementAndTestForError()
+                    end, msg = self.incrementAndTestForEnd()
                     if end:
                         return msg
                 else:
