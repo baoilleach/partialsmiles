@@ -356,47 +356,6 @@ def main():
     mol = ParseSmiles(text)
     mol.debug()
 
-def testChembl():
-    from openbabel import pybel
-    with open(r"C:\Tools\LargeData\sortedbylength.smi") as inp:
-        for line in inp:
-            smi = line.split()[0]
-            mol = ParseSmiles(smi)
-            hcounts = [atom.implh for atom in mol.atoms]
-            molb = pybel.readstring("smi", smi)
-            hcountsB = [atom.OBAtom.GetImplicitHCount() for atom in molb]
-            for x, y in zip(hcounts, hcountsB):
-                if x!=y:
-                    print(smi)
-                    print(hcounts)
-                    print(hcountsB)
-                    print()
-                    fd
-
-
-def fuzz():
-    alpha = "abcdefghijklmnopqrstuvwxyz"
-    alpha = "C"
-    chars = alpha + alpha.upper() + "123" + "%()[]@.+-"
-    N = 6
-    stack = []
-    for char in chars:
-        stack.append(char)
-    while stack:
-        curr = stack.pop()
-        if len(curr) < N:
-            for char in chars:
-                stack.append(curr + char)
-        else:
-            try:
-                ParseSmiles(curr)
-            except:
-                continue
-            else:
-                print(curr)
-        
 if __name__ == "__main__":
-    # testChembl()
-    # fuzz()
     if len(sys.argv) > 1:
         main()
