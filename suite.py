@@ -2,11 +2,22 @@ import unittest
 from smiparser import ParseSmiles
 
 class MolTest(unittest.TestCase):
+
     def testBonds(self):
         mol = ParseSmiles("CCO", False)
         self.assertTrue(mol.getBond(0, 1))
         self.assertTrue(mol.getBond(1, 2))
         self.assertFalse(mol.getBond(0, 2))
+
+    def testCharge(self):
+        data = [
+                ("[NH4+]", 1),
+                ("[CH3-]", -1),
+                ("[CH3---]", -3),
+               ]
+        for smi, charge in data:
+            mol = ParseSmiles(smi, False)
+            self.assertTrue(mol.atoms[0].charge, charge)
 
 class RuleTests(unittest.TestCase):
 
