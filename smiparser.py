@@ -1,5 +1,6 @@
 import sys
 from elements import elements
+# from valence import valence # allowed valence
 
 bondchars = "-=#$\\/"
 bondorders = [1, 2, 3, 4, 1, 1]
@@ -283,18 +284,24 @@ class SmilesParser:
 
             # Handle charge
             if self.smi[self.idx] in "+-":
+                charge = 1 if self.smi[self.idx] == '+' else -1
                 end, msg = self.incrementAndTestForEnd()
                 if end:
                     return msg
                 if self.smi[self.idx].isdigit():
-                    charge = int(self.smi[self.idx])
-                    if self.smi[self.idx] == '-':
-                        charge = -charge
+                    numcharge = int(self.smi[self.idx])
+                    charge *= numcharge
                     end, msg = self.incrementAndTestForEnd()
                     if end:
                         return msg
-                else:
-                    charge = 1 if self.smi[self.idx] == '+' else -1
+                elif self.smi[self.idx] in "+-":
+                    numcharge = 0
+                    while self.smi[self.idx] == self.smi[self.idx-1]:
+                        numcharge += 1
+                        end, msg = self.incrementAndTestForEnd()
+                        if end:
+                            return msg
+                    charge *= numcharge
             else:
                 charge = 0
 
