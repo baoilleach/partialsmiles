@@ -93,12 +93,14 @@ class SmilesParser:
         self.hcount = []
         self.idx = 0
         self.prev = [None]
+        self.bondchar = None
+        self.parsingAtom = False
         while self.idx < self.N:
             x = smi[self.idx]
             if x == '.':
                 if not self.rulesToIgnore & 1 and (self.idx == 0 or smi[self.idx-1]=='.'):
                     self.handleError("Empty molecules are not allowed")
-                if self.idx > 0 and smi[self.idx-1] in bondchars:
+                if self.bondchar:
                     self.handleError("An atom must follow a bond symbol")
                 self.prev[-1] = None
                 self.handleError(self.validateSyntax(dot=True))
@@ -106,7 +108,7 @@ class SmilesParser:
             elif x == ')':
                 if not self.rulesToIgnore & 2 and (self.idx > 1 and smi[self.idx-1]=='('):
                     self.handleError("Empty branches are not allowed")
-                if self.idx > 0 and smi[self.idx-1] in bondchars:
+                if self.bondchar:
                     self.handleError("An atom must follow a bond symbol")
                 self.prev.pop()
                 if not self.prev:
@@ -115,15 +117,16 @@ class SmilesParser:
             elif x == '(':
                 if not self.rulesToIgnore & 4 and (self.prev[-1] is None or smi[self.idx-1]=='('):
                     self.handleError("An atom must precede an open parenthesis")
-                if smi[self.idx-1] in bondchars:
+                if self.bondchar:
                     self.handleError("A bond symbol should not precede an open parenthesis")
                 self.prev.append(self.prev[-1])
                 self.idx += 1
             elif x in bondchars:
                 if self.prev[-1] is None:
                     self.handleError("An atom must precede a bond symbol")
-                if smi[self.idx-1] in bondchars:
+                if self.bondchar:
                     self.handleError("Only a single bond symbol should be used")
+                self.bondchar = x
                 self.idx += 1
             elif x.isdigit() or x=='%':
                 if self.prev[-1] is None:
@@ -171,7 +174,6 @@ class SmilesParser:
 
     def handleBCSymbol(self):
         x = self.smi[self.idx]
-        bondchar = self.smi[self.idx-1] if self.idx > 0 and self.smi[self.idx-1] in bondchars else ""
         if x == "%":
             bcsymbol = self.smi[self.idx:self.idx+3]
             self.idx += 2
@@ -184,7 +186,7 @@ class SmilesParser:
             if self.mol.getBond(opening, self.prev[-1]):
                 return "Cannot have a second bond between the same atoms"
             openbo = 0 if not openbc else ToBondOrder(openbc)
-            closebo = 0 if not bondchar else ToBondOrder(bondchar)
+            closebo = 0 if not self.bondchar else ToBondOrder(self.bondchar)
             if closebo and openbo and closebo != openbo:
                 return "Inconsistent bond orders"
             bo = closebo if closebo else openbo
@@ -196,9 +198,20 @@ class SmilesParser:
             bond = self.mol.addBond(opening, self.prev[-1], bo)
             bond.arom = arom
         else:
-            self.openbonds[bcsymbol] = (self.prev[-1], bondchar)
+            self.openbonds[bcsymbol] = (self.prev[-1], self.bondchar)
         self.idx += 1
+        self.bondchar = None
         return None
+
+    def getAdjustedExplicitValence(self, atom):
+        if atom.idx != self.prev[-1]:
+            return atom.getExplicitValence()
+        ans = atom.getExplicitValence()
+        if self.bondchar:
+            ans += ToBondOrder(self.bondchar)
+        else:
+            ans += 1
+        return ans
 
     def notAtEnd(self):
         return self.idx < self.N
@@ -217,7 +230,7 @@ class SmilesParser:
 
     def parseAtom(self):
         x = self.smi[self.idx]
-        bondchar = self.smi[self.idx-1] if self.idx > 0 and self.smi[self.idx-1] in bondchars else ""
+        self.parsingAtom = True
 
         if x == '[':
             end, msg = self.incrementAndTestForEnd()
@@ -310,6 +323,7 @@ class SmilesParser:
                 self.idx += 1
             else:
                 return "Missing the close bracket"
+
         elif self.notAtEnd() and self.smi[self.idx:self.idx+2] in ["Cl", "Br"]:
             symbol = self.smi[self.idx:self.idx+2]
             self.idx += 2
@@ -323,11 +337,15 @@ class SmilesParser:
             charge = 0
             isotope = 0
 
-        atom = self.mol.addAtom(symbol, self.prev[-1], bondchar)
+        atom = self.mol.addAtom(symbol, self.prev[-1], self.bondchar if self.bondchar else "")
         atom.charge = charge
         atom.isotope = isotope
         self.prev[-1] = atom.idx
         self.hcount.append(hcount)
+
+        # Reset
+        self.bondchar = None
+        self.parsingAtom = False
 
 valencemodel = {
         5: [3], 6: [4], 7: [3, 5], 15: [3, 5],
@@ -353,7 +371,7 @@ def ParseSmiles(smi, partial, rulesToIgnore=0):
 
 def main():
     text = sys.argv[1]
-    mol = ParseSmiles(text)
+    mol = ParseSmiles(text, False)
     mol.debug()
 
 if __name__ == "__main__":

@@ -1,5 +1,28 @@
 import unittest
-from smiparser import ParseSmiles
+from smiparser import SmilesParser, ParseSmiles
+
+class PartialTest(unittest.TestCase):
+
+    def testPartialValence(self):
+        data = [
+                ("C[", 1),
+                ("C=[", 2),
+                ("C=", 2),
+                ]
+        for smi, val in data:
+            sp = SmilesParser(True, 0)
+            mol = sp.parse(smi)
+            atom = mol.atoms[-1]
+            self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
+        data = [
+                ("C(", 1),
+                ("C(C)(", 2),
+                ]
+        for smi, val in data:
+            sp = SmilesParser(True, 0)
+            mol = sp.parse(smi)
+            atom = mol.atoms[0]
+            self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
 
 class MolTest(unittest.TestCase):
 
