@@ -17,6 +17,7 @@ class PartialTest(unittest.TestCase):
         data = [
                 ("C(", 1),
                 ("C(C)(", 2),
+                ("C(=C)(=", 4),
                 ]
         for smi, val in data:
             sp = SmilesParser(True, 0)
@@ -28,9 +29,9 @@ class MolTest(unittest.TestCase):
 
     def testBonds(self):
         mol = ParseSmiles("CCO", False)
-        self.assertTrue(mol.getBond(0, 1))
-        self.assertTrue(mol.getBond(1, 2))
-        self.assertFalse(mol.getBond(0, 2))
+        self.assertTrue(mol.getBond(mol.atoms[0], mol.atoms[1]))
+        self.assertTrue(mol.getBond(mol.atoms[1], mol.atoms[2]))
+        self.assertFalse(mol.getBond(mol.atoms[0], mol.atoms[2]))
 
     def testCharge(self):
         data = [

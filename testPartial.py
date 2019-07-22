@@ -17,5 +17,6 @@ def testChembl():
             testPartial(smi)
 
 if __name__ == "__main__":
+    testPartial("C/N=C/1\CCCN1")
     testPartial("[12H]")
     testChembl()

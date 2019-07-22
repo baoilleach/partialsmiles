@@ -50,19 +50,19 @@ class Molecule:
         self.atoms.append(atom)
         if prev is not None:
             bo = ToBondOrder(bondchar)
-            bond = self.addBond(prev, atom.idx, bo)
-            if atom.arom and self.atoms[prev].arom and not bondchar:
+            bond = self.addBond(prev, atom, bo)
+            if atom.arom and prev.arom and not bondchar:
                 bond.arom = True
         return atom
     def addBond(self, beg, end, bo):
         bond = Bond(beg, end, bo)
         bond.idx = len(self.bonds)
         self.bonds.append(bond)
-        self.atoms[beg].bonds.append(bond)
-        self.atoms[end].bonds.append(bond)
+        beg.bonds.append(bond)
+        end.bonds.append(bond)
         return bond
     def getBond(self, atomA, atomB):
-        for nbr_bond in self.atoms[atomA].bonds:
+        for nbr_bond in atomA.bonds:
             nbr = nbr_bond.end if nbr_bond.beg == atomA else nbr_bond.beg
             if nbr == atomB:
                 return nbr_bond
@@ -132,7 +132,7 @@ class SmilesParser:
                 if self.prev[-1] is None:
                     self.handleError("An atom must precede a bond closure symbol")
                 self.handleError(self.handleBCSymbol())
-            elif x in "[*BCNPOSFIbcnos":
+            elif x in "[*BCNPOSFIbcnpos":
                 self.handleError(self.parseAtom())
             else:
                 self.handleError("Illegal character")
@@ -192,7 +192,7 @@ class SmilesParser:
             bo = closebo if closebo else openbo
             arom = False
             if not bo:
-                if self.mol.atoms[opening].arom and self.mol.atoms[self.prev[-1]].arom:
+                if opening.arom and self.prev[-1].arom:
                     arom = True
                 bo = 1
             bond = self.mol.addBond(opening, self.prev[-1], bo)
@@ -204,7 +204,7 @@ class SmilesParser:
         return None
 
     def getAdjustedExplicitValence(self, atom):
-        if atom.idx != self.prev[-1]:
+        if atom != self.prev[-1]:
             return atom.getExplicitValence()
         ans = atom.getExplicitValence()
         if self.bondchar:
@@ -340,7 +340,7 @@ class SmilesParser:
         atom = self.mol.addAtom(symbol, self.prev[-1], self.bondchar if self.bondchar else "")
         atom.charge = charge
         atom.isotope = isotope
-        self.prev[-1] = atom.idx
+        self.prev[-1] = atom
         self.hcount.append(hcount)
 
         # Reset
