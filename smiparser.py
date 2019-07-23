@@ -21,6 +21,8 @@ class Bond:
         self.bo = bo
         self.arom = False
         self.idx = -1
+    def getNbr(self, atom):
+        return self.beg if self.end==atom else self.end
 
 class Atom:
     def __init__(self, element, charge=0):

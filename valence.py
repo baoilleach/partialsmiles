@@ -45,30 +45,63 @@ common_valencies = {1: {0: [1], 1: [0]},
 
 def IsAttachedToNitrogen(atom):
     bond = atom.bonds[0]
-    nbr = bond.beg if bond.beg != atom else bond.end
+    nbr = bond.getNbr(atom)
     return nbr.element == 7
 
-def AdjustForAromaticity(atom):
-    if atom.element == 6:
-        if atom.charge == 0:
-            if atom.getExplicitValence() + atom.implh == 3:
-                return 1
-    elif atom.element == 7:
-        if atom.charge == 0:
-            if atom.getExplicitValence() + atom.implh == 2:
-                return 1
-        elif atom.charge == 1:
-            if atom.getExplicitValence() + atom.implh == 3:
-                return 1
-    elif atom.element == 8 or atom.element == 34: # O/Se
-        if atom.charge == 1:
-            if atom.getExplicitValence() + atom.implh == 2:
-                return 1
-    elif atom.element == 16:
-        if atom.charge == 1:
-            if atom.getExplicitValence() + atom.implh == 2:
-                return 1
-    return 0
+def IsSpecialCase(atom):
+    elem = atom.element
+    if elem == 7:
+        # Any exo-cyclic double bond from a N
+        # e.g. pyridine N-oxide as the double bond form
+        if atom.getExplicitDegree() + atom.implh == 3 and atom.charge == 0:
+            return True
+    elif elem == 16:
+        # e.g. Cs1(=O)ccccn1
+        if atom.getExplicitDegree() + atom.implh == 4 and atom.charge == 0:
+            return True
+    return False
+
+def NeedsDblBond(atom):
+    if not atom.arom:
+        return False
+
+    # Does it already have an explicit double bond?
+    for bond in atom.bonds:
+        if bond.arom: continue
+        nbr = bond.getNbr(atom)
+        bo = bond.bo
+        if bo < 2: continue
+        if bo == 2:
+            return True if IsSpecialCase(atom) else False
+        else: # bo > 2
+            return False
+
+    # Is it one of the cases where we know that it only has single bonds?
+    chg = atom.charge
+    deg = atom.getExplicitDegree() + atom.implh
+    elem = atom.element
+    if elem == 6:
+        if deg == 3 and (chg == 1 or chg == -1):
+            return False
+    elif elem in [5, 7, 15, 33, 51, 83]:
+        if chg == 0: # e.g. a pyrrole-type nitrogen
+            if deg == 3 or deg > 4:
+                return False
+        elif chg == -1:
+            if deg == 2:
+                return False
+        elif chg == 1:
+            if deg > 3:
+                return False
+    elif elem in [8, 16, 34, 52]:
+        if chg == 0:
+            if deg == 2 or deg == 4 or deg > 5:
+                return False
+        elif chg == -1 or chg == 1:
+            if deg == 3 or deg == 5 or deg > 6:
+                return False
+
+    return True # It needs a double bond
 
 def HasCommonValence(atom):
     data = common_valencies.get(atom.element, None) 
@@ -80,8 +113,8 @@ def HasCommonValence(atom):
     if allowed is None:
         return False # unusual charge state
     explval = atom.getExplicitValence()
-    if atom.arom:
-        explval += AdjustForAromaticity(atom)
+    if NeedsDblBond(atom):
+        explval += 1
     totalbonds = explval + atom.implh
     if totalbonds not in allowed:
         if not(atom.element==8 and atom.charge==0 and explval==1 and atom.implh==0 and IsAttachedToNitrogen(atom)): # TEMPO-like
