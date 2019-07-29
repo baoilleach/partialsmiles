@@ -37,7 +37,7 @@ class MolTest(unittest.TestCase):
         data = [
                 ("[NH4+]", 1),
                 ("[CH3-]", -1),
-                ("[CH3---]", -3),
+                ("[CH2--]", -2),
                ]
         for smi, charge in data:
             mol = ParseSmiles(smi, False)
@@ -114,12 +114,12 @@ class ParserTests(unittest.TestCase):
         self.check(good, bad)
 
     def testBrackets(self):
-        good = ["[16CH4]", "[NH4+]", "[C@@H]"]
+        good = ["[16CH4]", "[NH3++]", "C[C@@H](C)C"]
         bad = ["[16C)", "C(C-)Cl"]
         self.check(good, bad)
 
     def testCharge(self):
-        good = ["[NH4+]", "[NH++++]", "[CH3-]"]
+        good = ["[NH4+]", "[NH3++]", "[CH3-]"]
         bad = ["[N4+H]", "[NH+-]"]
         self.check(good, bad)
 

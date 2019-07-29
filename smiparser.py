@@ -1,6 +1,6 @@
 import sys
 from elements import elements
-# from valence import valence # allowed valence
+from valence import HasCommonValence
 
 bondchars = "-=#$\\/"
 bondorders = [1, 2, 3, 4, 1, 1]
@@ -34,7 +34,7 @@ class Atom:
         self.bonds = []
         self.isotope = 0
     def __repr__(self):
-        return "Atom(elem=%d)" % self.element
+        return "Atom(elem=%d,chg=%d)" % (self.element, self.charge)
     def getExplicitDegree(self):
         return len(self.bonds)
     def getExplicitValence(self):
@@ -140,7 +140,6 @@ class SmilesParser:
                 self.handleError("Illegal character")
 
         self.handleError(self.validateSyntax())
-        self.setImplicitHydrogenCount()
         self.mol.openbonds = dict(self.openbonds)
         return self.mol
 
@@ -149,6 +148,12 @@ class SmilesParser:
             raise Exception(CreateError(msg, self.smi, self.idx))
 
     def validateSyntax(self, dot=False):
+        # ----- Check for unusual valence -------
+        self.setImplicitHydrogenCount()
+        for atom in self.mol.atoms:
+            if not HasCommonValence(atom, self.partial):
+                return "Uncommon valence or charge state"
+        # ----- Check syntax -------
         # Check that all ring bonds have been closed
         # Check that all brackets have been closed
         if self.partial:
@@ -310,7 +315,7 @@ class SmilesParser:
                     if end:
                         return msg
                 elif self.smi[self.idx] in "+-":
-                    numcharge = 0
+                    numcharge = 1
                     while self.smi[self.idx] == self.smi[self.idx-1]:
                         numcharge += 1
                         end, msg = self.incrementAndTestForEnd()

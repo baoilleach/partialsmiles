@@ -103,21 +103,29 @@ def NeedsDblBond(atom):
 
     return True # It needs a double bond
 
-def HasCommonValence(atom):
+def HasCommonValence(atom, partial):
     data = common_valencies.get(atom.element, None) 
     # How to handle elements not in the list?
     if data is None:
-        return True
         return False # Alternatively, you may wish to return True
     allowed = data.get(atom.charge, None)
     if allowed is None:
         return False # unusual charge state
     explval = atom.getExplicitValence()
-    if NeedsDblBond(atom):
+    if NeedsDblBond(atom): # adjust valence for aromatic atoms
         explval += 1
-    totalbonds = explval + atom.implh
-    if totalbonds not in allowed:
-        if not(atom.element==8 and atom.charge==0 and explval==1 and atom.implh==0 and IsAttachedToNitrogen(atom)): # TEMPO-like
-            return False # unusual valence (and not TEMPO-like)
-    return True
+    totalvalence = explval + atom.implh
+    if totalvalence in allowed:
+        return True
+    # Nitrogen can only have 3 bonds (even if hypervalent)
+    if atom.element==7 and atom.getExplicitDegree() + atom.implh > 3:
+        return False
+    if partial:
+        if totalvalence <= max(allowed):
+            return True # still possibly normal valence
+    # Note to reader: you could comment out the following line if
+    # you don't need to support TEMPO-like (stable) oxygen radicals
+    if atom.element==8 and atom.charge==0 and explval==1 and atom.implh==0 and IsAttachedToNitrogen(atom): # TEMPO-like
+        return True
+    return False
 
