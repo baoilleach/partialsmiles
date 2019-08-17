@@ -1,13 +1,19 @@
 import unittest
 from smiparser import SmilesParser, ParseSmiles
 
-class PartialTest(unittest.TestCase):
+class ValenceTests(unittest.TestCase):
 
-    def testPartialValence(self):
+    def testAdjustedValence(self):
         data = [
+                ("C", 0), # might turn out to be the final char
                 ("C[", 1),
+                ("C1(", 2),
                 ("C=[", 2),
                 ("C=", 2),
+                ("C.", 0),
+                ("C1", 1),
+                ("C=1", 2),
+                ("C(C)", 1),
                 ]
         for smi, val in data:
             sp = SmilesParser(True, 0)
@@ -24,6 +30,12 @@ class PartialTest(unittest.TestCase):
             mol = sp.parse(smi)
             atom = mol.atoms[0]
             self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
+
+    def testParser(self):
+        smis = ["C(C)(C)(C)(C)C", "[N5+]"]
+        for smi in smis:
+            self.assertRaises(Exception, ParseSmiles, smi, False)
+            self.assertRaises(Exception, ParseSmiles, smi, True)
 
 class MolTest(unittest.TestCase):
 
@@ -122,6 +134,7 @@ class ParserTests(unittest.TestCase):
         good = ["[NH4+]", "[NH3++]", "[CH3-]"]
         bad = ["[N4+H]", "[NH+-]"]
         self.check(good, bad)
+
 
 if __name__ == "__main__":
     unittest.main()

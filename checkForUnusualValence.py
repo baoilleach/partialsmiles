@@ -1,28 +1,31 @@
 from smiparser import ParseSmiles
-from valence import HasCommonValence
 
-def HasUnusualValence(mol):
-    for atom in mol.atoms:
-        # print(atom, atom.getExplicitValence(), atom.implh)
-        if not HasCommonValence(atom):
-            return True
-    return False
-        
+def partialtest():
+    for line in smis.split("\n"):
+        print(line)
+        for i in range(1, len(line)):
+            try:
+                mol = ParseSmiles(line[:i], partial=True)
+            except Exception as e:
+                print(str(e))
+                break
+
+        try:
+            mol = ParseSmiles(line, partial=False)
+        except Exception:
+            pass
+        else:
+            print("There should have been an exception")
+
 def main():
     with open(r"C:\Tools\LargeData\sortedbylength.smi") as inp:
         for line in inp:
             smi = line.split()[0]
-            mol = ParseSmiles(smi, partial=False)
-            unusual = HasUnusualValence(mol)
-            if unusual:
-                print(smi)
+            try:
+                mol = ParseSmiles(smi, partial=False)
+            except Exception as e:
+                print(str(e))
 
 if __name__ == "__main__":
+    # partialtest()
     main()
-    fd
-    smi = "Cc1ccccc1"
-    smi = "c1ccoc1"
-    smi = "Cc1ccccn1"
-    mol = ParseSmiles(smi, partial=False)
-    unusual = HasUnusualValence(mol)
-    print(unusual)

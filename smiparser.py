@@ -1,6 +1,6 @@
 import sys
 from elements import elements
-from valence import HasCommonValence
+import valence
 
 bondchars = "-=#$\\/"
 bondorders = [1, 2, 3, 4, 1, 1]
@@ -73,7 +73,7 @@ class Molecule:
         for i, atom in enumerate(self.atoms):
             print("Atom: %d %s charge %d implh %d expdeg %d iso %d arom %d" % (i, atom.element, atom.charge, atom.implh, atom.getExplicitDegree(), atom.isotope, atom.arom))
         for i, bond in enumerate(self.bonds):
-            print("Bond: %d %d->%d bo %d arom %d" % (i, bond.beg, bond.end, bond.bo, bond.arom))
+            print("Bond: %d %d->%d bo %d arom %d" % (i, bond.beg.idx, bond.end.idx, bond.bo, bond.arom))
         for bcsymbol, (atomidx, bondchar) in self.openbonds.items():
             print("Open bond: %d->? bc '%s'" % (atomidx, bondchar))
     def __repr__(self):
@@ -96,7 +96,7 @@ class SmilesParser:
         self.idx = 0
         self.prev = [None]
         self.bondchar = None
-        self.parsingAtom = False
+        self.smiidx = []
         while self.idx < self.N:
             x = smi[self.idx]
             if x == '.':
@@ -145,14 +145,17 @@ class SmilesParser:
 
     def handleError(self, msg):
         if msg:
-            raise Exception(CreateError(msg, self.smi, self.idx))
+            if type(msg) == type(()):
+                raise Exception(CreateError(msg[0], self.smi, msg[1]))
+            else:
+                raise Exception(CreateError(msg, self.smi, self.idx))
 
     def validateSyntax(self, dot=False):
         # ----- Check for unusual valence -------
         self.setImplicitHydrogenCount()
         for atom in self.mol.atoms:
-            if not HasCommonValence(atom, self.partial):
-                return "Uncommon valence or charge state"
+            if not self.hasCommonValence(atom):
+                return ("Uncommon valence or charge state", self.smiidx[atom.idx])
         # ----- Check syntax -------
         # Check that all ring bonds have been closed
         # Check that all brackets have been closed
@@ -211,14 +214,53 @@ class SmilesParser:
         return None
 
     def getAdjustedExplicitValence(self, atom):
-        if atom != self.prev[-1]:
-            return atom.getExplicitValence()
+        """Adjust the explicit valence for the attachee in partial SMILES
+        
+        For example: "C(" has explicit valence of 0, but adjusted to 1
+        For example: "C=" has explicit valence of 0, but adjusted to 2
+        "C" -> 0, whether or not dots are allowed
+        "C(" -> 1 (either way)
+        
+        """
         ans = atom.getExplicitValence()
+        if not self.partial or atom != self.prev[-1]:
+            return ans
         if self.bondchar:
             ans += ToBondOrder(self.bondchar)
-        else:
+        elif self.smi[-1] in "([":
             ans += 1
+        for bcsymbol, (beg, symbol) in self.openbonds.items():
+            if beg == atom:
+                ans += 1 if not symbol else ToBondOrder(symbol)
+                break
         return ans
+
+    def hasCommonValence(self, atom):
+        data = valence.common_valencies.get(atom.element, None) 
+        # How to handle elements not in the list?
+        if data is None:
+            return False # Alternatively, you may wish to return True
+        allowed = data.get(atom.charge, None)
+        if allowed is None:
+            return False # unusual charge state
+        explval = atom.getExplicitValence()
+        if valence.NeedsDblBond(atom): # adjust valence for aromatic atoms
+            explval += 1
+        totalvalence = explval + atom.implh
+        if totalvalence in allowed:
+            return True
+        # Nitrogen can only have 3 bonds (even if hypervalent)
+        if atom.element==7 and atom.getExplicitDegree() + atom.implh > 3:
+            return False
+        if self.partial:
+            if totalvalence <= max(allowed):
+                return True # still possibly normal valence
+        # Note to reader: you could comment out the following line if
+        # you don't need to support TEMPO-like (stable) oxygen radicals
+        if atom.element==8 and atom.charge==0 and explval==1 and atom.implh==0 and valence.IsAttachedToNitrogen(atom): # TEMPO-like
+            return True
+        return False
+
 
     def notAtEnd(self):
         return self.idx < self.N
@@ -237,7 +279,6 @@ class SmilesParser:
 
     def parseAtom(self):
         x = self.smi[self.idx]
-        self.parsingAtom = True
 
         if x == '[':
             end, msg = self.incrementAndTestForEnd()
@@ -349,10 +390,10 @@ class SmilesParser:
         atom.isotope = isotope
         self.prev[-1] = atom
         self.hcount.append(hcount)
+        self.smiidx.append(self.idx-1)
 
         # Reset
         self.bondchar = None
-        self.parsingAtom = False
 
 valencemodel = {
         5: [3], 6: [4], 7: [3, 5], 15: [3, 5],
