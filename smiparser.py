@@ -140,6 +140,7 @@ class SmilesParser:
                 self.handleError("Illegal character")
 
         self.handleError(self.validateSyntax())
+        self.handleError(self.validateValence())
         self.mol.openbonds = dict(self.openbonds)
         return self.mol
 
@@ -150,12 +151,14 @@ class SmilesParser:
             else:
                 raise Exception(CreateError(msg, self.smi, self.idx))
 
-    def validateSyntax(self, dot=False):
+    def validateValence(self):
         # ----- Check for unusual valence -------
         self.setImplicitHydrogenCount()
         for atom in self.mol.atoms:
             if not self.hasCommonValence(atom):
                 return ("Uncommon valence or charge state", self.smiidx[atom.idx])
+
+    def validateSyntax(self, dot=False):
         # ----- Check syntax -------
         # Check that all ring bonds have been closed
         # Check that all brackets have been closed
