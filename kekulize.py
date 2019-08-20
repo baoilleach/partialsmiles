@@ -77,6 +77,7 @@ class Kekulizer:
             change = False
             for atomIdx in nodeIterator(degrees):
                 if not self.needs_dbl_bond[atomIdx]: continue
+                atom = mol.atoms[atomIdx]
                 # The following is almost identical to the code above for deg 1
                 # atoms except for handling the variable 'change'
                 for bond in atom.bonds:
@@ -109,18 +110,38 @@ class Kekulizer:
 
         return finished
 
+    def FindPath(self, atomIdx, isDoubleBond, visited):
+        if self.needs_dbl_bond[atomIdx]:
+            return True
+        visited[atomIdx] = True
+        atom = self.mol.atoms[atomIdx]
+        for bond in atom.bonds:
+            if not bond.arom: continue
+            nbr = bond.getNbrAtom(atom)
+            if not self.kekule_system[nbr.idx]: continue
+            ...
+
+
     def BackTrack(self):
         return False
 
     def AssignDoubleBonds(self):
-        pass
+        for bond, is_dbl in zip(self.mol.bonds, self.doubleBonds):
+            if is_dbl:
+                bond.bo = 2
 
 if __name__ == "__main__":
     import smiparser as sp
-    mol = sp.ParseSmiles("c1cccc1", False)
-    kekulizer = Kekulizer(mol)
-    success = kekulizer.GreedyMatch()
-    if not success:
-        success = kekulizer.BackTrack()
-    kekulizer.AssignDoubleBonds()
-    print(success)
+    # with open(r"C:\Tools\smilesreading\2-aromaticsmiles\chembl\cdk_2.0.smi") as inp:
+    with open("hard.smi") as inp:
+        for line in inp:
+            smi = line.split()[0]
+            try:
+                mol = sp.ParseSmiles(smi, False)
+            except:
+                continue
+            kekulizer = Kekulizer(mol)
+            success = kekulizer.GreedyMatch()
+            if not success:
+                success = kekulizer.BackTrack()
+            print(success)
