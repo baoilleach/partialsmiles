@@ -1,5 +1,12 @@
 import valence
 
+# Here are some true examples of molecules that cannot be kekulized:
+# n1c[n]nn1
+# c12ncncc1c(=C)[n]n2C
+# c1snn2c1nc1ccccc21
+# n1c2c(ns1)cc1c(c2)nsn1
+# s1cc2nc3c(n2n1)cccc3
+
 def nodeIterator(degrees):
     # Iterate over degree 2 nodes first
     for idx, degree in enumerate(degrees):
@@ -8,6 +15,10 @@ def nodeIterator(degrees):
     for idx, degree in enumerate(degrees):
         if degree > 2:
             yield idx
+
+# Set to True to force the greedy match to fail more often, so that
+# the BackTracking search gets called more often. Useful in debugging.
+CREATE_GREEDY_MATCH_FAILURES = False
 
 class Kekulizer:
     def __init__(self, mol):
@@ -40,34 +51,37 @@ class Kekulizer:
         self.doubleBonds = [False]*len(mol.bonds)
 
         finished = False
+        firsttime = True
         while(True): # Main loop
 
-            # Complete all of the degree one nodes
-            while len(degreeOneAtoms):
-                atom = degreeOneAtoms.pop()
-                # some nodes may already have been handled
-                if not self.needs_dbl_bond[atom.idx]: continue
-                for bond in atom.bonds:
-                    if not bond.arom: continue
-                    nbr = bond.getNbr(atom)
-                    if not self.needs_dbl_bond[nbr.idx]: continue
-                    # create a double bond from atom -> nbr
-                    self.doubleBonds[bond.idx] = True
-                    self.needs_dbl_bond[atom.idx] = False
-                    self.needs_dbl_bond[nbr.idx] = False
-                    # now update degree information for nbr's neighbors
-                    for nbrbond in nbr.bonds:
-                        if nbrbond == bond or not nbrbond.arom: continue
-                        nbrnbr = nbrbond.getNbr(nbr)
-                        if not self.needs_dbl_bond[nbrnbr.idx]: continue
-                        degrees[nbrnbr.idx] -= 1
-                        if degrees[nbrnbr.idx] == 1:
-                            degreeOneAtoms.append(nbrnbr)
-                    # only a single double bond can be made to atom so we
-                    # can break here
-                    break
+            if not firsttime or not CREATE_GREEDY_MATCH_FAILURES:
+                # Complete all of the degree one nodes
+                while len(degreeOneAtoms):
+                    atom = degreeOneAtoms.pop()
+                    # some nodes may already have been handled
+                    if not self.needs_dbl_bond[atom.idx]: continue
+                    for bond in atom.bonds:
+                        if not bond.arom: continue
+                        nbr = bond.getNbr(atom)
+                        if not self.needs_dbl_bond[nbr.idx]: continue
+                        # create a double bond from atom -> nbr
+                        self.doubleBonds[bond.idx] = True
+                        self.needs_dbl_bond[atom.idx] = False
+                        self.needs_dbl_bond[nbr.idx] = False
+                        # now update degree information for nbr's neighbors
+                        for nbrbond in nbr.bonds:
+                            if nbrbond == bond or not nbrbond.arom: continue
+                            nbrnbr = nbrbond.getNbr(nbr)
+                            if not self.needs_dbl_bond[nbrnbr.idx]: continue
+                            degrees[nbrnbr.idx] -= 1
+                            if degrees[nbrnbr.idx] == 1:
+                                degreeOneAtoms.append(nbrnbr)
+                        # only a single double bond can be made to atom so we
+                        # can break here
+                        break
 
-            if all(x==False for x in self.needs_dbl_bond):
+            firsttime = False
+            if not any(self.needs_dbl_bond):
                 finished = True
                 break
 
@@ -110,20 +124,58 @@ class Kekulizer:
 
         return finished
 
-    def FindPath(self, atomIdx, isDoubleBond, visited):
+    # The isDoubleBond alternates between double and single, as we need to find
+    # an alternating path
+    def FindPath(self, atomIdx, isDoubleBond, visited, m_path):
         if self.needs_dbl_bond[atomIdx]:
             return True
         visited[atomIdx] = True
         atom = self.mol.atoms[atomIdx]
         for bond in atom.bonds:
             if not bond.arom: continue
-            nbr = bond.getNbrAtom(atom)
+            nbr = bond.getNbr(atom)
             if not self.kekule_system[nbr.idx]: continue
-            ...
-
+            if self.doubleBonds[bond.idx] == isDoubleBond:
+                if visited[nbr.idx]: continue
+                found_path = self.FindPath(nbr.idx, not isDoubleBond, visited, m_path)
+                if found_path:
+                    m_path.append(nbr)
+                    return True
+        visited[atomIdx] = False
+        return False
 
     def BackTrack(self):
-        return False
+        # With an odd number of bits, it's never going to kekulize fully, but
+        # let's fill in as many as we can
+        count = sum(self.needs_dbl_bond)
+
+        total_handled = 0
+        for idx, needs_dbl_bond in enumerate(self.needs_dbl_bond):
+            if not needs_dbl_bond: continue
+            total_handled += 1
+            # If there is no additional atom available to matched this bit
+            # then terminate.
+            if total_handled == count:
+                return False
+
+            # Our goal is to find an alternating path to another atom
+            # that also needs a double bond
+            self.needs_dbl_bond[idx] = False # to avoid the trivial null path being found
+            visited = [False] * len(self.mol.atoms)
+            m_path = []
+            found_path = self.FindPath(idx, False, visited, m_path)
+            if not found_path: # Implies not kekulizable
+                self.needs_dbl_bond[idx] = True # reset
+                continue
+            total_handled += 1
+            m_path.append(mol.atoms[idx])
+            self.needs_dbl_bond[m_path[0].idx] = False
+            # Flip all of the bond orders on the path from double<--->single
+            for i in range(0, len(m_path) - 1):
+                bond = self.mol.getBond(m_path[i], m_path[i+1])
+                self.doubleBonds[bond.idx] = i % 2 == 0
+
+        return not any(self.needs_dbl_bond)
 
     def AssignDoubleBonds(self):
         for bond, is_dbl in zip(self.mol.bonds, self.doubleBonds):
@@ -132,8 +184,9 @@ class Kekulizer:
 
 if __name__ == "__main__":
     import smiparser as sp
-    # with open(r"C:\Tools\smilesreading\2-aromaticsmiles\chembl\cdk_2.0.smi") as inp:
-    with open("hard.smi") as inp:
+    # with open(r"D:\Work\smilesreading\2-aromaticsmiles\chembl\cdk_2.0.smi") as inp:
+    with open(r"D:\Work\smilesreading\2-aromaticsmiles\chembl\openbabel_dev4Aug17.smi") as inp:
+    # with open("hard.smi") as inp:
         for line in inp:
             smi = line.split()[0]
             try:
@@ -144,4 +197,5 @@ if __name__ == "__main__":
             success = kekulizer.GreedyMatch()
             if not success:
                 success = kekulizer.BackTrack()
-            print(success)
+                if not success:
+                    print(smi)
