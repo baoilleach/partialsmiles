@@ -173,7 +173,7 @@ class SmilesParser:
         #    from the atoms in an incomplete system.
 
         incompleteAtoms = set(x[0] for x in self.openbonds.values() if x[0].arom)
-        if self.prev[-1].arom:
+        if self.prev[-1] is not None and self.prev[-1].arom:
             incompleteAtoms.add(self.prev[-1])
 
         # Find aromatic systems (aromatic atoms joined by aromatic bonds)
