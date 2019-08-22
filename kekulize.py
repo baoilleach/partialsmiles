@@ -48,7 +48,7 @@ class Kekulizer:
                 degreeOneAtoms.append(atom)
 
         # Location of assigned double bonds
-        self.doubleBonds = [False]*len(mol.bonds)
+        self.doubleBonds = [False]*len(self.mol.bonds)
 
         finished = False
         firsttime = True
@@ -91,7 +91,7 @@ class Kekulizer:
             change = False
             for atomIdx in nodeIterator(degrees):
                 if not self.needs_dbl_bond[atomIdx]: continue
-                atom = mol.atoms[atomIdx]
+                atom = self.mol.atoms[atomIdx]
                 # The following is almost identical to the code above for deg 1
                 # atoms except for handling the variable 'change'
                 for bond in atom.bonds:
@@ -168,7 +168,7 @@ class Kekulizer:
                 self.needs_dbl_bond[idx] = True # reset
                 continue
             total_handled += 1
-            m_path.append(mol.atoms[idx])
+            m_path.append(self.mol.atoms[idx])
             self.needs_dbl_bond[m_path[0].idx] = False
             # Flip all of the bond orders on the path from double<--->single
             for i in range(0, len(m_path) - 1):
@@ -182,6 +182,17 @@ class Kekulizer:
             if is_dbl:
                 bond.bo = 2
 
+def Kekulize(mol):
+    kekulizer = Kekulizer(mol)
+    success = kekulizer.GreedyMatch()
+    if not success:
+        success = kekulizer.BackTrack()
+    if not success:
+        for idx, needs_dbl_bond in enumerate(kekulizer.needs_dbl_bond):
+            if needs_dbl_bond:
+                return idx # an atom in a system that is unkekulizable
+    return None
+
 if __name__ == "__main__":
     import smiparser as sp
     # with open(r"D:\Work\smilesreading\2-aromaticsmiles\chembl\cdk_2.0.smi") as inp:
@@ -193,9 +204,3 @@ if __name__ == "__main__":
                 mol = sp.ParseSmiles(smi, False)
             except:
                 continue
-            kekulizer = Kekulizer(mol)
-            success = kekulizer.GreedyMatch()
-            if not success:
-                success = kekulizer.BackTrack()
-                if not success:
-                    print(smi)

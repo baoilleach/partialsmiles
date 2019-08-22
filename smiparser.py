@@ -1,6 +1,7 @@
 import sys
 from elements import elements
 import valence
+import kekulize
 
 bondchars = "-=#$\\/"
 bondorders = [1, 2, 3, 4, 1, 1]
@@ -74,8 +75,8 @@ class Molecule:
             print("Atom: %d %s charge %d implh %d expdeg %d iso %d arom %d" % (i, atom.element, atom.charge, atom.implh, atom.getExplicitDegree(), atom.isotope, atom.arom))
         for i, bond in enumerate(self.bonds):
             print("Bond: %d %d->%d bo %d arom %d" % (i, bond.beg.idx, bond.end.idx, bond.bo, bond.arom))
-        for bcsymbol, (atomidx, bondchar) in self.openbonds.items():
-            print("Open bond: %d->? bc '%s'" % (atomidx, bondchar))
+        for bcsymbol, (atom, bondchar) in self.openbonds.items():
+            print("Open bond: %d->? bc '%s'" % (atom.idx, bondchar))
     def __repr__(self):
         return "Molecule(atoms=%s)" % [str(x) for x in self.atoms]
 
@@ -141,6 +142,7 @@ class SmilesParser:
 
         self.handleError(self.validateSyntax())
         self.handleError(self.validateValence())
+        self.handleError(self.validateKekulization())
         self.mol.openbonds = dict(self.openbonds)
         return self.mol
 
@@ -157,6 +159,53 @@ class SmilesParser:
         for atom in self.mol.atoms:
             if not self.hasCommonValence(atom):
                 return ("Uncommon valence or charge state", self.smiidx[atom.idx])
+
+    def validateKekulization(self):
+        # Try to kekulize all aromatic ring systems that are 'complete'
+        # i.e. where no member has an unclosed ring opening or
+        #      is the current atom being added to by the parser
+
+        # To do this:
+        # 1. Identify incomplete atoms
+        # 2. Identify any aromatic ring system that contains an incomplete
+        #    atom.
+        # 3. Run the normal kekulization procedure after stripping aromaticity
+        #    from the atoms in an incomplete system.
+
+        incompleteAtoms = set(x[0] for x in self.openbonds.values() if x[0].arom)
+        if self.prev[-1].arom:
+            incompleteAtoms.add(self.prev[-1])
+
+        # Find aromatic systems (aromatic atoms joined by aromatic bonds)
+        seen = [0]*len(self.mol.atoms)
+        arom_system = 0
+        incomplete_systems = set()
+        for atom in self.mol.atoms:
+            if seen[atom.idx] or not atom.arom: continue
+            arom_system += 1
+            stack = [atom]
+            while len(stack):
+                curr = stack.pop()
+                if seen[curr.idx]: continue
+                seen[curr.idx] = arom_system
+                if curr in incompleteAtoms:
+                    incomplete_systems.add(arom_system)
+                for bond in curr.bonds:
+                    if bond.arom:
+                        nbr = bond.getNbr(curr)
+                        if nbr.arom and not seen[nbr.idx]:
+                            stack.append(nbr)
+
+        # Strip aromaticity
+        for idx, atom in enumerate(self.mol.atoms):
+            if seen[idx] in incomplete_systems:
+                atom.arom = False
+
+        # Kekulize
+        result = kekulize.Kekulize(self.mol)
+        if result:
+            return ("Aromatic system cannot be kekulized", self.smiidx[result])
+        return None
 
     def validateSyntax(self, dot=False):
         # ----- Check syntax -------
@@ -239,7 +288,7 @@ class SmilesParser:
         return ans
 
     def hasCommonValence(self, atom):
-        data = valence.common_valencies.get(atom.element, None) 
+        data = valence.common_valencies.get(atom.element, None)
         # How to handle elements not in the list?
         if data is None:
             return False # Alternatively, you may wish to return True
@@ -422,7 +471,7 @@ def ParseSmiles(smi, partial, rulesToIgnore=0):
 
 def main():
     text = sys.argv[1]
-    mol = ParseSmiles(text, False)
+    mol = ParseSmiles(text, True)
     mol.debug()
 
 if __name__ == "__main__":
