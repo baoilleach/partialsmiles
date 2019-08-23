@@ -180,7 +180,7 @@ class Kekulizer:
     def AssignDoubleBonds(self):
         for bond, is_dbl in zip(self.mol.bonds, self.doubleBonds):
             if is_dbl:
-                bond.bo = 2
+                bond.order = 2
 
 def Kekulize(mol):
     kekulizer = Kekulizer(mol)

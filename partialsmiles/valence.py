@@ -69,7 +69,7 @@ def NeedsDblBond(atom):
     for bond in atom.bonds:
         if bond.arom: continue
         nbr = bond.getNbr(atom)
-        bo = bond.bo
+        bo = bond.order
         if bo < 2: continue
         if bo == 2:
             return True if IsSpecialCase(atom) else False

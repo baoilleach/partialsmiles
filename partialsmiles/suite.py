@@ -139,17 +139,17 @@ class KekulizationTests(unittest.TestCase):
 
     def testBasic(self):
         mol = ParseSmiles("c1ccccc1", False) # Will be kekulized
-        bondorders = [bond.bo for bond in mol.bonds]
+        bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 3)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
 
         mol = ParseSmiles("c1ccccc1", True) # Won't be kekulized
-        bondorders = [bond.bo for bond in mol.bonds]
+        bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 6)
         self.assertEqual(sum(bond.arom for bond in mol.bonds), 6)
 
         mol = ParseSmiles("c1ccccc1C", True) # Will be
-        bondorders = [bond.bo for bond in mol.bonds]
+        bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 4)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
 

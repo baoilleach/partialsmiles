@@ -17,10 +17,10 @@ def ToBondOrder(bondchar):
     return bondorders[idx] # returns 1 for empty string
 
 class Bond:
-    def __init__(self, beg, end, bo):
+    def __init__(self, beg, end, order):
         self.beg = beg
         self.end = end
-        self.bo = bo
+        self.order = order
         self.arom = False
         self.idx = -1
     def getNbr(self, atom):
@@ -40,7 +40,7 @@ class Atom:
     def getExplicitDegree(self):
         return len(self.bonds)
     def getExplicitValence(self):
-        return sum(bond.bo for bond in self.bonds)
+        return sum(bond.order for bond in self.bonds)
 
 class Molecule:
     def __init__(self):
@@ -75,7 +75,7 @@ class Molecule:
         for i, atom in enumerate(self.atoms):
             print("Atom: %d %s charge %d implh %d expdeg %d iso %d arom %d" % (i, atom.element, atom.charge, atom.implh, atom.getExplicitDegree(), atom.isotope, atom.arom))
         for i, bond in enumerate(self.bonds):
-            print("Bond: %d %d->%d bo %d arom %d" % (i, bond.beg.idx, bond.end.idx, bond.bo, bond.arom))
+            print("Bond: %d %d->%d bo %d arom %d" % (i, bond.beg.idx, bond.end.idx, bond.order, bond.arom))
         for bcsymbol, (atom, bondchar) in self.openbonds.items():
             print("Open bond: %d->? bc '%s'" % (atom.idx, bondchar))
     def __repr__(self):
