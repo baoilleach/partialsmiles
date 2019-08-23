@@ -2,6 +2,7 @@ import sys
 from elements import elements
 import valence
 import kekulize
+from exceptions import *
 
 bondchars = "-=#$\\/"
 bondorders = [1, 2, 3, 4, 1, 1]
@@ -80,10 +81,6 @@ class Molecule:
     def __repr__(self):
         return "Molecule(atoms=%s)" % [str(x) for x in self.atoms]
 
-def CreateError(text, smi, location):
-    error = [text, "  " + smi, " "*(location+2)+"^"]
-    return "\n".join(error)
-
 class SmilesParser:
     def __init__(self, partial, rulesToIgnore):
         self.partial = partial
@@ -102,56 +99,56 @@ class SmilesParser:
             x = smi[self.idx]
             if x == '.':
                 if not self.rulesToIgnore & 1 and (self.idx == 0 or smi[self.idx-1]=='.'):
-                    self.handleError("Empty molecules are not allowed")
+                    self.handleError(SMILESSyntaxError, "Empty molecules are not allowed")
                 if self.bondchar:
-                    self.handleError("An atom must follow a bond symbol")
+                    self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
                 self.prev[-1] = None
-                self.handleError(self.validateSyntax(dot=True))
+                self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
                 self.idx += 1
             elif x == ')':
                 if not self.rulesToIgnore & 2 and (self.idx > 1 and smi[self.idx-1]=='('):
-                    self.handleError("Empty branches are not allowed")
+                    self.handleError(SMILESSyntaxError, "Empty branches are not allowed")
                 if self.bondchar:
-                    self.handleError("An atom must follow a bond symbol")
+                    self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
                 self.prev.pop()
                 if not self.prev:
-                    self.handleError("Unmatched close parenthesis")
+                    self.handleError(SMILESSyntaxError, "Unmatched close parenthesis")
                 self.idx += 1
             elif x == '(':
                 if not self.rulesToIgnore & 4 and (self.prev[-1] is None or smi[self.idx-1]=='('):
-                    self.handleError("An atom must precede an open parenthesis")
+                    self.handleError(SMILESSyntaxError, "An atom must precede an open parenthesis")
                 if self.bondchar:
-                    self.handleError("A bond symbol should not precede an open parenthesis")
+                    self.handleError(SMILESSyntaxError, "A bond symbol should not precede an open parenthesis")
                 self.prev.append(self.prev[-1])
                 self.idx += 1
             elif x in bondchars:
                 if self.prev[-1] is None:
-                    self.handleError("An atom must precede a bond symbol")
+                    self.handleError(SMILESSyntaxError, "An atom must precede a bond symbol")
                 if self.bondchar:
-                    self.handleError("Only a single bond symbol should be used")
+                    self.handleError(SMILESSyntaxError, "Only a single bond symbol should be used")
                 self.bondchar = x
                 self.idx += 1
             elif x.isdigit() or x=='%':
                 if self.prev[-1] is None:
-                    self.handleError("An atom must precede a bond closure symbol")
-                self.handleError(self.handleBCSymbol())
+                    self.handleError(SMILESSyntaxError, "An atom must precede a bond closure symbol")
+                self.handleError(SMILESSyntaxError, self.handleBCSymbol())
             elif x in "[*BCNPOSFIbcnpos":
-                self.handleError(self.parseAtom())
+                self.handleError(SMILESSyntaxError, self.parseAtom())
             else:
-                self.handleError("Illegal character")
+                self.handleError(SMILESSyntaxError, "Illegal character")
 
-        self.handleError(self.validateSyntax())
-        self.handleError(self.validateValence())
-        self.handleError(self.validateKekulization())
+        self.handleError(SMILESSyntaxError, self.validateSyntax())
+        self.handleError(SMILESValenceError, self.validateValence())
+        self.handleError(SMILESKekulizationFailure, self.validateKekulization())
         self.mol.openbonds = dict(self.openbonds)
         return self.mol
 
-    def handleError(self, msg):
+    def handleError(self, errtype, msg):
         if msg:
             if type(msg) == type(()):
-                raise Exception(CreateError(msg[0], self.smi, msg[1]))
+                raise errtype(msg[0], self.smi, msg[1])
             else:
-                raise Exception(CreateError(msg, self.smi, self.idx))
+                raise errtype(msg[0], self.smi, self.idx)
 
     def validateValence(self):
         # ----- Check for unusual valence -------
