@@ -187,6 +187,7 @@ def Kekulize(mol):
     success = kekulizer.GreedyMatch()
     if not success:
         success = kekulizer.BackTrack()
+    kekulizer.AssignDoubleBonds()
     if not success:
         for idx, needs_dbl_bond in enumerate(kekulizer.needs_dbl_bond):
             if needs_dbl_bond:
