@@ -97,11 +97,12 @@ class SmilesParser:
         self.prev = [None]
         self.bondchar = None
         self.smiidx = []
+        self.reaction_part = 0
         while self.idx < self.N:
             x = smi[self.idx]
             if x in "CcONon[BPSFIbps*":
                 self.handleError(SMILESSyntaxError, self.parseAtom())
-            elif x in '. \t':
+            elif x in '. \t>':
                 if not self.rulesToIgnore & 1 and (self.idx == 0 or smi[self.idx-1]=='.'):
                     self.handleError(SMILESSyntaxError, "Empty molecules are not allowed")
                 if self.bondchar:
@@ -110,8 +111,14 @@ class SmilesParser:
                 if x == '.':
                     self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
                     self.idx += 1
-                else:
-                    self.partial = False # Regard whitespace as the stop token
+                elif x == '>':
+                    self.reaction_part += 1
+                    if self.reaction_part == 3:
+                        self.handleError(SMILESSyntaxError, "Reactions only have three parts")
+                    self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
+                    self.idx += 1
+                else: # regard whitespace as the stop token
+                    self.partial = False
                     break
             elif x == ')':
                 if not self.rulesToIgnore & 2 and (self.idx > 1 and smi[self.idx-1]=='('):
@@ -154,7 +161,7 @@ class SmilesParser:
             if type(msg) == type(()):
                 raise errtype(msg[0], self.smi, msg[1])
             else:
-                raise errtype(msg[0], self.smi, self.idx)
+                raise errtype(msg, self.smi, self.idx)
 
     def validateValence(self):
         # ----- Check for unusual valence -------
