@@ -55,6 +55,14 @@ class MolTest(unittest.TestCase):
             mol = ParseSmiles(smi, False)
             self.assertTrue(mol.atoms[0].charge, charge)
 
+    def testAsterisk(self):
+        mol = ParseSmiles("*", True)
+        self.assertEqual(mol.atoms[0].element, 0)
+        self.assertEqual(mol.atoms[0].implh, 0)
+        mol = ParseSmiles("[*H]", True)
+        self.assertEqual(mol.atoms[0].element, 0)
+        self.assertEqual(mol.atoms[0].implh, 1)
+
 class RuleTests(unittest.TestCase):
 
     def testRuleOne(self):

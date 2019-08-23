@@ -294,6 +294,8 @@ class SmilesParser:
         data = valence.common_valencies.get(atom.element, None)
         # How to handle elements not in the list?
         if data is None:
+            if atom.element == 0:
+                return True # How to handle asterisk
             return False # Alternatively, you may wish to return True
         allowed = data.get(atom.charge, None)
         if allowed is None:
@@ -315,7 +317,6 @@ class SmilesParser:
         if atom.element==8 and atom.charge==0 and explval==1 and atom.implh==0 and valence.IsAttachedToNitrogen(atom): # TEMPO-like
             return True
         return False
-
 
     def notAtEnd(self):
         return self.idx < self.N
@@ -456,6 +457,8 @@ valencemodel = {
         9: [1], 17: [1], 35: [1], 53: [1]
         }
 def SmilesValence(elem, val):
+    if elem == 0:
+        return val
     implvalences = valencemodel[elem]
     for implvalence in implvalences:
         if val <= implvalence:
