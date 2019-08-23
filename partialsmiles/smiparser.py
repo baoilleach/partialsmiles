@@ -82,9 +82,11 @@ class Molecule:
         return "Molecule(atoms=%s)" % [str(x) for x in self.atoms]
 
 class SmilesParser:
+
     def __init__(self, partial, rulesToIgnore):
         self.partial = partial
         self.rulesToIgnore = rulesToIgnore
+
     def parse(self, smi):
         self.smi = smi
         self.N = len(smi)
@@ -97,14 +99,20 @@ class SmilesParser:
         self.smiidx = []
         while self.idx < self.N:
             x = smi[self.idx]
-            if x == '.':
+            if x in "CcONon[BPSFIbps*":
+                self.handleError(SMILESSyntaxError, self.parseAtom())
+            elif x in '. \t':
                 if not self.rulesToIgnore & 1 and (self.idx == 0 or smi[self.idx-1]=='.'):
                     self.handleError(SMILESSyntaxError, "Empty molecules are not allowed")
                 if self.bondchar:
                     self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
                 self.prev[-1] = None
-                self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
-                self.idx += 1
+                if x == '.':
+                    self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
+                    self.idx += 1
+                else:
+                    self.partial = False # Regard whitespace as the stop token
+                    break
             elif x == ')':
                 if not self.rulesToIgnore & 2 and (self.idx > 1 and smi[self.idx-1]=='('):
                     self.handleError(SMILESSyntaxError, "Empty branches are not allowed")
@@ -132,8 +140,6 @@ class SmilesParser:
                 if self.prev[-1] is None:
                     self.handleError(SMILESSyntaxError, "An atom must precede a bond closure symbol")
                 self.handleError(SMILESSyntaxError, self.handleBCSymbol())
-            elif x in "[*BCNPOSFIbcnpos":
-                self.handleError(SMILESSyntaxError, self.parseAtom())
             else:
                 self.handleError(SMILESSyntaxError, "Illegal character")
 
@@ -366,7 +372,7 @@ class SmilesParser:
             end, msg = self.incrementAndTestForEnd()
             if end:
                 return msg
-            
+
             # Handle tet stereo
             if self.smi[self.idx] == '@':
                 end, msg = self.incrementAndTestForEnd()

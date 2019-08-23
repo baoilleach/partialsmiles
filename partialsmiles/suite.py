@@ -143,16 +143,25 @@ class KekulizationTests(unittest.TestCase):
         self.assertEqual(sum(x==1 for x in bondorders), 3)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
 
+        mol = ParseSmiles("c1ccccc1 ", False) # Will be kekulized
+        bondorders = [bond.order for bond in mol.bonds]
+        self.assertEqual(sum(x==1 for x in bondorders), 3)
+        self.assertEqual(sum(x==2 for x in bondorders), 3)
+
+        mol = ParseSmiles("c1ccccc1.", False) # Will be kekulized
+        bondorders = [bond.order for bond in mol.bonds]
+        self.assertEqual(sum(x==1 for x in bondorders), 3)
+        self.assertEqual(sum(x==2 for x in bondorders), 3)
+
         mol = ParseSmiles("c1ccccc1", True) # Won't be kekulized
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 6)
         self.assertEqual(sum(bond.arom for bond in mol.bonds), 6)
 
-        mol = ParseSmiles("c1ccccc1C", True) # Will be
+        mol = ParseSmiles("c1ccccc1C", True) # Will be kekulized
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 4)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
-
 
 if __name__ == "__main__":
     unittest.main()
