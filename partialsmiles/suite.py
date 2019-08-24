@@ -1,5 +1,6 @@
 import unittest
 from smiparser import SmilesParser, ParseSmiles
+from exceptions import *
 
 class ValenceTests(unittest.TestCase):
 
@@ -32,10 +33,16 @@ class ValenceTests(unittest.TestCase):
             self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
 
     def testParser(self):
-        smis = ["C(C)(C)(C)(C)C", "[N5+]"]
+        smis = ["C(C)(C)(C)(C)C", "[N+5]"]
         for smi in smis:
-            self.assertRaises(Exception, ParseSmiles, smi, False)
-            self.assertRaises(Exception, ParseSmiles, smi, True)
+            self.assertRaises(SMILESValenceError, ParseSmiles, smi, False)
+            self.assertRaises(SMILESValenceError, ParseSmiles, smi, True)
+
+    def testInvalid(self):
+        mol = ParseSmiles("[CH3]C", True)
+        self.assertRaises(SMILESValenceError, ParseSmiles, "[CH2]C", True)
+        self.assertRaises(SMILESValenceError, ParseSmiles, "[CH3]1C", True)
+        self.assertRaises(SMILESValenceError, ParseSmiles, "[CH2]=1C", True)
 
 class MolTest(unittest.TestCase):
 

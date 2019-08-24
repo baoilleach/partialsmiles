@@ -237,7 +237,7 @@ class SmilesParser:
             if hcount > -1:
                 atom.implh = hcount
             else:
-                explicitvalence = atom.getExplicitValence()
+                explicitvalence = self.getAdjustedExplicitValence(atom)
                 implicitvalence = SmilesValence(atom.element, explicitvalence)
                 implh = implicitvalence - explicitvalence
                 if implh > 0 and atom.arom:
@@ -285,12 +285,13 @@ class SmilesParser:
         
         """
         ans = atom.getExplicitValence()
-        if not self.partial or atom != self.prev[-1]:
+        if not self.partial:
             return ans
-        if self.bondchar:
-            ans += ToBondOrder(self.bondchar)
-        elif self.smi[-1] in "([":
-            ans += 1
+        if atom == self.prev[-1]:
+            if self.bondchar:
+                ans += ToBondOrder(self.bondchar)
+            elif self.smi[-1] in "([":
+                ans += 1
         for bcsymbol, (beg, symbol) in self.openbonds.items():
             if beg == atom:
                 ans += 1 if not symbol else ToBondOrder(symbol)
@@ -307,7 +308,7 @@ class SmilesParser:
         allowed = data.get(atom.charge, None)
         if allowed is None:
             return False # unusual charge state
-        explval = atom.getExplicitValence()
+        explval = self.getAdjustedExplicitValence(atom)
         if valence.NeedsDblBond(atom): # adjust valence for aromatic atoms
             explval += 1
         totalvalence = explval + atom.implh
@@ -316,7 +317,7 @@ class SmilesParser:
         # Nitrogen can only have 3 bonds (even if hypervalent)
         if atom.element==7 and atom.getExplicitDegree() + atom.implh > 3:
             return False
-        if self.partial:
+        if self.partial and atom in self.prev:
             if totalvalence <= max(allowed):
                 return True # still possibly normal valence
         # Note to reader: you could comment out the following line if
