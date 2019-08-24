@@ -183,5 +183,14 @@ class KekulizationTests(unittest.TestCase):
         self.assertEqual(sum(x==1 for x in bondorders), 4)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
 
+    def testHardCases(self):
+        smis = ["c12c3c4c5c1c6c7c8c9c6c%10c5c%11c%12c4c%13c%14c%15c-%16c%17c%13c%12c%18c%19c%17c%20c%16c%21c%22=c%23c%24c(c8c%25C%24%26C%27(C%26)c%22c%20c%28c%19c%29c%30c(c%27%28)-c%25c9c%30c%10c%11c%29%18)c%31c7c2c%32-c%31c%23C%21%33C%15(c%32c%143)C%33",
+                 "c12c3c4c5c6c1c-7c8c9c2c%10c3c%11c%12c%13c%14c%15c%16c%17c%13c%11c4c%18c%17c-%19c%20C%21%22c%23c%24-c%25c%26C%21(C%22)c(c%19%16)c-%27c%15C%28%29c%14c-%30c%12c%10c%31c9c%32c-%33c(c%31%30)C%28(C%29)c(c%26%27)c%33c%25C%34(C%328C%34)c%24c7c6c%23c%20c5%18",
+                 "c12c3c4c5c6c7c4c8c9c%10c%11c8c%12c7c%13c-%14c6c%15c%16c%14c%17c%18c%19c%20c%21=c%22c%23c%24c(c1c(c93)c%25c%24c%26c%22c%27c%21c%18c%28C%17%29C%13(c%12c%30-c%28c%27c(c%11%30)c%26c%10%25)C%31C%29C(=N)CCC%31)c%32c-%33c2c5c%15c%33c(c%19%16)C%20C%32%23",
+                 "c12c3c4c5c6c7c8c5c9c%10c4c1c%11c%12c%13c2c%14c%15c3c6c%16c%15c%17c%18c%19c%16c7c%20c%19c%21c%22c%18c%23c%17c%14c%13c%24c%23c%25c%22c%26c%27c%28c%29c(c%12c%24c%28%25)-c%11c%10C%30%31C%29(c%27c-%32c(c%26%21)c%20c8c%32c%309)CC(=N)CC%31"
+                 ]
+        for smi in smis:
+            mol = ParseSmiles(smi, False)
+
 if __name__ == "__main__":
     unittest.main()
