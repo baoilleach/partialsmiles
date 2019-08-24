@@ -221,7 +221,7 @@ class SmilesParser:
         # ----- Check syntax -------
         # Check that all ring bonds have been closed
         # Check that all brackets have been closed
-        if self.partial:
+        if self.partial and not dot:
             return None
         if (not dot or not self.rulesToIgnore & 16) and self.openbonds:
             text = "s have" if len(self.openbonds) > 1 else " has"
