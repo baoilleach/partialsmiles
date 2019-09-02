@@ -62,7 +62,8 @@ def IsSpecialCase(atom):
     return False
 
 def NeedsDblBond(atom):
-    if not atom.arom:
+    # Does it have an aromatic bond?
+    if all(not bond.arom for bond in atom.bonds):
         return False
 
     # Does it already have an explicit double bond?

@@ -4,8 +4,8 @@ import valence
 import kekulize
 from exceptions import *
 
-bondchars = "-=#$\\/"
-bondorders = [1, 2, 3, 4, 1, 1]
+bondchars = "-=#$\\/:"
+bondorders = [1, 2, 3, 4, 1, 1, 1]
 CLOSE, OPEN = range(2)
 
 aromatic_list = ["c", "n", "p", "o", "s", "te", "se", "b"] # more?
@@ -55,7 +55,7 @@ class Molecule:
         if prev is not None:
             bo = ToBondOrder(bondchar)
             bond = self.addBond(prev, atom, bo)
-            if atom.arom and prev.arom and not bondchar:
+            if bondchar == ':' or (atom.arom and prev.arom and not bondchar):
                 bond.arom = True
         return atom
     def addBond(self, beg, end, bo):
@@ -248,7 +248,7 @@ class SmilesParser:
                 explicitvalence = self.getAdjustedExplicitValence(atom)
                 implicitvalence = SmilesValence(atom.element, explicitvalence)
                 implh = implicitvalence - explicitvalence
-                if implh > 0 and atom.arom:
+                if implh > 0 and (atom.arom or any(bond.arom for bond in atom.bonds)):
                     implh -= 1
                 atom.implh = implh
 
@@ -270,11 +270,14 @@ class SmilesParser:
             if closebo and openbo and closebo != openbo:
                 return "Inconsistent bond orders"
             bo = closebo if closebo else openbo
-            arom = False
-            if not bo:
-                if opening.arom and self.prev[-1].arom:
-                    arom = True
-                bo = 1
+            if self.bondchar == ':':
+                arom = True
+            else:
+                arom = False
+                if not bo:
+                    if opening.arom and self.prev[-1].arom:
+                        arom = True
+                    bo = 1
             bond = self.mol.addBond(opening, self.prev[-1], bo)
             bond.arom = arom
         else:
