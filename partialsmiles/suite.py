@@ -192,5 +192,15 @@ class KekulizationTests(unittest.TestCase):
         for smi in smis:
             mol = ParseSmiles(smi, False)
 
+    def testFailures(self):
+        smis = [
+                "n1c[n]nn1",
+                "c12ncncc1c(=C)[n]n2C",
+                "c1snn2c1nc1ccccc21",
+                "s1cc2nc3c(n2n1)cccc3"
+                ]
+        for smi in smis:
+            self.assertRaises(SMILESKekulizationFailure, ParseSmiles, smi, False)
+
 if __name__ == "__main__":
     unittest.main()
