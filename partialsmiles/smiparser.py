@@ -195,12 +195,13 @@ class SmilesParser:
         if self.partial and self.prev[-1] is not None and self.prev[-1].arom:
             incompleteAtoms.add(self.prev[-1])
 
-        # Find aromatic systems (aromatic atoms joined by aromatic bonds)
+        # Find aromatic systems (networks of aromatic bonds)
         seen = [0]*len(self.mol.atoms)
+        bond_marker = [0]*len(self.mol.bonds)
         arom_system = 0
         incomplete_systems = set()
         for atom in self.mol.atoms:
-            if seen[atom.idx] or not atom.arom: continue
+            if seen[atom.idx] or not any(bond.arom for bond in atom.bonds): continue
             arom_system += 1
             stack = [atom]
             while len(stack):
@@ -211,14 +212,15 @@ class SmilesParser:
                     incomplete_systems.add(arom_system)
                 for bond in curr.bonds:
                     if bond.arom:
+                        bond_marker[bond.idx] = arom_system
                         nbr = bond.getNbr(curr)
-                        if nbr.arom and not seen[nbr.idx]:
+                        if not seen[nbr.idx]:
                             stack.append(nbr)
 
         # Strip aromaticity
-        for idx, atom in enumerate(self.mol.atoms):
-            if seen[idx] in incomplete_systems:
-                atom.arom = False
+        for idx, bond in enumerate(self.mol.bonds):
+            if bond_marker[idx] in incomplete_systems:
+                bond.arom = False
 
         # Kekulize
         result = kekulize.Kekulize(self.mol)
@@ -228,9 +230,9 @@ class SmilesParser:
         # Reset aromaticity
         if True: # set To False for a minor speed-up if you are not reusing
                   # the molecule afterwards.
-            for idx, atom in enumerate(self.mol.atoms):
-                if seen[idx] in incomplete_systems:
-                    atom.arom = True
+            for idx, bond in enumerate(self.mol.bonds):
+                if bond_marker[idx] in incomplete_systems:
+                    bond.arom = True
 
         return None
 
