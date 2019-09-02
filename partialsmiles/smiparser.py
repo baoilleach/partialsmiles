@@ -23,6 +23,7 @@ class Bond:
         self.order = order
         self.arom = False
         self.idx = -1
+
     def getNbr(self, atom):
         return self.beg if self.end==atom else self.end
 
@@ -35,10 +36,13 @@ class Atom:
         self.idx = -1
         self.bonds = []
         self.isotope = 0
+
     def __repr__(self):
         return "Atom(elem=%d,chg=%d,idx=%d)" % (self.element, self.charge, self.idx)
+
     def getExplicitDegree(self):
         return len(self.bonds)
+
     def getExplicitValence(self):
         return sum(bond.order for bond in self.bonds)
 
@@ -46,6 +50,7 @@ class Molecule:
     def __init__(self):
         self.atoms = []
         self.bonds = []
+
     def addAtom(self, symbol, prev, bondchar):
         element = ToElement(symbol)
         atom = Atom(element)
@@ -58,6 +63,7 @@ class Molecule:
             if bondchar == ':' or (atom.arom and prev.arom and not bondchar):
                 bond.arom = True
         return atom
+
     def addBond(self, beg, end, bo):
         bond = Bond(beg, end, bo)
         bond.idx = len(self.bonds)
@@ -65,12 +71,14 @@ class Molecule:
         beg.bonds.append(bond)
         end.bonds.append(bond)
         return bond
+
     def getBond(self, atomA, atomB):
         for nbr_bond in atomA.bonds:
             nbr = nbr_bond.end if nbr_bond.beg == atomA else nbr_bond.beg
             if nbr == atomB:
                 return nbr_bond
         return None
+
     def debug(self):
         for i, atom in enumerate(self.atoms):
             print("Atom: %d %s charge %d implh %d expdeg %d iso %d arom %d" % (i, atom.element, atom.charge, atom.implh, atom.getExplicitDegree(), atom.isotope, atom.arom))
@@ -78,6 +86,7 @@ class Molecule:
             print("Bond: %d %d->%d bo %d arom %d" % (i, bond.beg.idx, bond.end.idx, bond.order, bond.arom))
         for bcsymbol, (atom, bondchar) in self.openbonds.items():
             print("Open bond: %d->? bc '%s'" % (atom.idx, bondchar))
+
     def __repr__(self):
         return "Molecule(atoms=%s)" % [str(x) for x in self.atoms]
 
@@ -475,6 +484,7 @@ valencemodel = {
         8: [2], 16: [2, 4, 6],
         9: [1], 17: [1], 35: [1], 53: [1]
         }
+
 def SmilesValence(elem, val):
     if elem == 0:
         return val
@@ -489,7 +499,7 @@ def ToElement(symbol):
         symbol = symbol[0].upper() + symbol[1:]
     return elements[symbol]
 
-def ParseSmiles(smi, partial, rulesToIgnore=0):
+def ParseSmiles(smi, partial=False, rulesToIgnore=0):
     sp = SmilesParser(partial, rulesToIgnore);
     mol = sp.parse(smi)
     return mol
@@ -500,5 +510,4 @@ def main():
     mol.debug()
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        main()
+    main()
