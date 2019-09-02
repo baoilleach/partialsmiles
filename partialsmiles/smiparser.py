@@ -36,7 +36,7 @@ class Atom:
         self.bonds = []
         self.isotope = 0
     def __repr__(self):
-        return "Atom(elem=%d,chg=%d)" % (self.element, self.charge)
+        return "Atom(elem=%d,chg=%d,idx=%d)" % (self.element, self.charge, self.idx)
     def getExplicitDegree(self):
         return len(self.bonds)
     def getExplicitValence(self):
@@ -215,6 +215,14 @@ class SmilesParser:
         result = kekulize.Kekulize(self.mol)
         if result:
             return ("Aromatic system cannot be kekulized", self.smiidx[result])
+
+        # Reset aromaticity
+        if True: # set To False for a minor speed-up if you are not reusing
+                  # the molecule afterwards.
+            for idx, atom in enumerate(self.mol.atoms):
+                if seen[idx] in incomplete_systems:
+                    atom.arom = True
+
         return None
 
     def validateSyntax(self, dot=False):
