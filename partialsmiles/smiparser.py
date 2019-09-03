@@ -333,12 +333,12 @@ class SmilesParser:
         explval = self.getAdjustedExplicitValence(atom)
         if valence.NeedsDblBond(atom): # adjust valence for aromatic atoms
             explval += 1
+        # Neutral nitrogen can only have 3 bonds (even if hypervalent)
+        if atom.element == 7 and atom.charge == 0 and atom.getExplicitDegree() + atom.implh > 3:
+            return False
         totalvalence = explval + atom.implh
         if totalvalence in allowed:
             return True
-        # Nitrogen can only have 3 bonds (even if hypervalent)
-        if atom.element==7 and atom.getExplicitDegree() + atom.implh > 3:
-            return False
         if self.partial and atom in self.prev:
             if totalvalence <= max(allowed):
                 return True # still possibly normal valence

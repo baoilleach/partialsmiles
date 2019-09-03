@@ -44,6 +44,10 @@ class ValenceTests(unittest.TestCase):
         self.assertRaises(ValenceError, ParseSmiles, "[CH3]1C", True)
         self.assertRaises(ValenceError, ParseSmiles, "[CH2]=1C", True)
 
+    def testCoverage(self):
+        for smi in ["[Eu]C", "[N](=C)(C)(C)C"]:
+            self.assertRaises(ValenceError, ParseSmiles, smi, True)
+
 class MolTest(unittest.TestCase):
 
     def testBonds(self):
