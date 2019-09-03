@@ -4,7 +4,7 @@ A validating SMILES parser, with support for partial SMILES (e.g. as generated c
 
 It validates syntax and ability to kekulize aromatic systems. It also checks the valence against a set of allowed values (which the user should edit if necessary - see valence.py). It does not check stereochemistry.
 
-This is an early release, not yet ready for production use, but feedback and bug reports welcome.
+This is still in development and not yet ready for production use, but feedback and bug reports welcome.
 
 ```
 >>> import partialsmiles as ps
