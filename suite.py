@@ -76,14 +76,14 @@ class RuleTests(unittest.TestCase):
         """Whether to allow empty molecules, like C..C"""
         smi = "C..C"
         self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
-        self.assertRaises(Exception, ParseSmiles, smi, True)
+        self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
         ParseSmiles(smi, False, 1)
 
     def testRuleTwo(self):
         "Whether to allow an empty branch like C()C"
         smi = "C()C"
-        self.assertRaises(Exception, ParseSmiles, smi, False)
-        self.assertRaises(Exception, ParseSmiles, smi, True)
+        self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+        self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
         ParseSmiles(smi, False, 2)
 
     def testRuleThree(self):
@@ -91,24 +91,24 @@ class RuleTests(unittest.TestCase):
         atom like (CC)"""
         smis = ["(CC)", "C.(CC)"]
         for smi in smis:
-            self.assertRaises(Exception, ParseSmiles, smi, False)
-            self.assertRaises(Exception, ParseSmiles, smi, True)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
             ParseSmiles(smi, False, 4)
 
     def testRuleFour(self):
         """Whether to allow a dot within parentheses"""
         smis = ["C(C.C)C"]
         for smi in smis:
-            self.assertRaises(Exception, ParseSmiles, smi, False)
-            self.assertRaises(Exception, ParseSmiles, smi, True)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
             ParseSmiles(smi, False, 8)
 
     def testRuleFive(self):
         """Whether to allow bond closures across disconnected components"""
         smis = ["C1.C1"]
         for smi in smis:
-            self.assertRaises(Exception, ParseSmiles, smi, False)
-            self.assertRaises(Exception, ParseSmiles, smi, True)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
             ParseSmiles(smi, False, 16)
 
 class ParserTests(unittest.TestCase):
@@ -117,7 +117,7 @@ class ParserTests(unittest.TestCase):
         for smi in good:
             ParseSmiles(smi, False)
         for smi in bad:
-            self.assertRaises(Exception, ParseSmiles, smi, False)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
 
     def testParentheses(self):
         good = ["C(=O)Cl"]
