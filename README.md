@@ -8,13 +8,13 @@ This is an early release, not yet ready for production use, but feedback and bug
 
 ```
 >>> import partialsmiles as ps
->>> mol = ps.ParseSMILES("CC(")
+>>> mol = ps.ParseSmiles("CC(")
 Traceback (most recent call last):
 ...
 partialsmiles.exceptions.SMILESSyntaxError: 1 branch has not been closed
   CC(
      ^
->>> mol = ps.ParseSMILES("CC(", partial=True)
+>>> mol = ps.ParseSmiles("CC(", partial=True)
 >>> mol.debug()
 Atom: 0 6 charge 0 implh 3 expdeg 1 iso 0 arom 0
 Atom: 1 6 charge 0 implh 2 expdeg 1 iso 0 arom 0
