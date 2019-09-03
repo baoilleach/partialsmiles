@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-"""PartialSMILES, a validating SMILES parser that can read incomplete SMILES"""
+"""partialsmiles, a validating SMILES parser that can read incomplete SMILES"""
 
 __name__ = "partialsmiles"
 __author__ = "Noel M O'Boyle"
@@ -28,6 +28,5 @@ __version__ = "0.1"
 __license__ = "MIT"
 __copyright__ = "Noel O'Boyle 2019"
 
-from .smiparser import ParseSMILES
-from .exceptions import SMILESSyntaxError, SMILESKekulizationFailure, SMILESValenceError
-
+from .smiparser import ParseSmiles
+from .exceptions import SMILESSyntaxError, KekulizationFailure, ValenceError

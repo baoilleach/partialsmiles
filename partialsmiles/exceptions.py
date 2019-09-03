@@ -21,7 +21,7 @@
 # SOFTWARE.
 
 class Error(Exception):
-    """Base class for PartialSMILES exceptions."""
+    """Base class for partialsmiles exceptions."""
     def __init__(self, message, smi, idx):
         self.smi = smi
         self.idx = idx
@@ -39,7 +39,7 @@ class SMILESSyntaxError(Error):
         idx -- index of the character in the SMILES when the error occurred
     """
 
-class SMILESKekulizationFailure(Error):
+class KekulizationFailure(Error):
     """Exception raised when an aromatic system cannot be kekulized
 
     Attributes:
@@ -48,7 +48,7 @@ class SMILESKekulizationFailure(Error):
         idx -- index of the character in the SMILES when the error occurred
     """
 
-class SMILESValenceError(Error):
+class ValenceError(Error):
     """Exception raised when the valence is not consistent with allowed values
 
     Attributes:

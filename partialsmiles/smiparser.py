@@ -1,8 +1,8 @@
 import sys
-from elements import elements
-import valence
-import kekulize
-from exceptions import *
+from .elements import elements
+from . import valence
+from . import kekulize
+from .exceptions import *
 
 bondchars = "-=#$\\/:"
 bondorders = [1, 2, 3, 4, 1, 1, 1]
@@ -160,8 +160,8 @@ class SmilesParser:
                 self.handleError(SMILESSyntaxError, "Illegal character")
 
         self.handleError(SMILESSyntaxError, self.validateSyntax())
-        self.handleError(SMILESValenceError, self.validateValence())
-        self.handleError(SMILESKekulizationFailure, self.validateKekulization())
+        self.handleError(ValenceError, self.validateValence())
+        self.handleError(KekulizationFailure, self.validateKekulization())
         self.mol.openbonds = dict(self.openbonds)
         return self.mol
 

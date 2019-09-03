@@ -1,4 +1,4 @@
-import valence
+from . import valence
 
 # Here are some true examples of molecules that cannot be kekulized:
 # n1c[n]nn1

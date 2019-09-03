@@ -1,6 +1,6 @@
 import unittest
-from smiparser import SmilesParser, ParseSmiles
-from exceptions import *
+from partialsmiles.smiparser import SmilesParser, ParseSmiles
+from partialsmiles.exceptions import *
 
 class ValenceTests(unittest.TestCase):
 
@@ -35,14 +35,14 @@ class ValenceTests(unittest.TestCase):
     def testParser(self):
         smis = ["C(C)(C)(C)(C)C", "[N+5]"]
         for smi in smis:
-            self.assertRaises(SMILESValenceError, ParseSmiles, smi, False)
-            self.assertRaises(SMILESValenceError, ParseSmiles, smi, True)
+            self.assertRaises(ValenceError, ParseSmiles, smi, False)
+            self.assertRaises(ValenceError, ParseSmiles, smi, True)
 
     def testInvalid(self):
         mol = ParseSmiles("[CH3]C", True)
-        self.assertRaises(SMILESValenceError, ParseSmiles, "[CH2]C", True)
-        self.assertRaises(SMILESValenceError, ParseSmiles, "[CH3]1C", True)
-        self.assertRaises(SMILESValenceError, ParseSmiles, "[CH2]=1C", True)
+        self.assertRaises(ValenceError, ParseSmiles, "[CH2]C", True)
+        self.assertRaises(ValenceError, ParseSmiles, "[CH3]1C", True)
+        self.assertRaises(ValenceError, ParseSmiles, "[CH2]=1C", True)
 
 class MolTest(unittest.TestCase):
 
@@ -75,7 +75,7 @@ class RuleTests(unittest.TestCase):
     def testRuleOne(self):
         """Whether to allow empty molecules, like C..C"""
         smi = "C..C"
-        self.assertRaises(Exception, ParseSmiles, smi, False)
+        self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
         self.assertRaises(Exception, ParseSmiles, smi, True)
         ParseSmiles(smi, False, 1)
 
@@ -200,7 +200,7 @@ class KekulizationTests(unittest.TestCase):
                 "s1cc2nc3c(n2n1)cccc3"
                 ]
         for smi in smis:
-            self.assertRaises(SMILESKekulizationFailure, ParseSmiles, smi, False)
+            self.assertRaises(KekulizationFailure, ParseSmiles, smi, False)
 
 if __name__ == "__main__":
     unittest.main()
