@@ -47,6 +47,8 @@ class ValenceTests(unittest.TestCase):
     def testCoverage(self):
         for smi in ["[Eu]C", "[N](=C)(C)(C)C"]:
             self.assertRaises(ValenceError, ParseSmiles, smi, True)
+        # TEMPO
+        mol = ParseSmiles("C1(C)(C)N([O])C(C)(C)CCC1", partial=False)
 
 class MolTest(unittest.TestCase):
 
@@ -123,6 +125,9 @@ class ParserTests(unittest.TestCase):
         for smi in bad:
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
 
+    def testIllegalChar(self):
+        self.check(["C"], ["£"])
+
     def testParentheses(self):
         good = ["C(=O)Cl"]
         bad = ["C(", "C(C(", "C)", "CCC.)", "(C)", "C((C))",
@@ -146,12 +151,13 @@ class ParserTests(unittest.TestCase):
 
     def testIsotope(self):
         good = ["[12CH4]"]
-        bad = ["[0CH4]"]
+        bad = ["[0CH4]", "[1", "[12", "[123", "[v", "[C@", "[C@@",
+               "[CH", "[CH4", "[C+", "[C+2", "[C++"]
         self.check(good, bad)
 
     def testBrackets(self):
         good = ["[16CH4]", "[NH3++]", "C[C@@H](C)C"]
-        bad = ["[16C)", "C(C-)Cl"]
+        bad = ["[16C)", "C(C-)Cl", "[C"]
         self.check(good, bad)
 
     def testCharge(self):

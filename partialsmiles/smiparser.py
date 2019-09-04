@@ -501,15 +501,9 @@ def ToElement(symbol):
         symbol = symbol[0].upper() + symbol[1:]
     return elements[symbol]
 
+###################### PUBLIC API ########################
+
 def ParseSmiles(smi, partial=False, rulesToIgnore=0):
     sp = SmilesParser(partial, rulesToIgnore);
     mol = sp.parse(smi)
     return mol
-
-def main():
-    text = sys.argv[1]
-    mol = ParseSmiles(text, True)
-    mol.debug()
-
-if __name__ == "__main__":
-    main()
