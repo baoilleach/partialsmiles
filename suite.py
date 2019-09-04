@@ -49,6 +49,7 @@ class ValenceTests(unittest.TestCase):
             self.assertRaises(ValenceError, ParseSmiles, smi, True)
         # TEMPO
         mol = ParseSmiles("C1(C)(C)N([O])C(C)(C)CCC1", partial=False)
+        mol = ParseSmiles("FC[CH2]", partial=True)
 
 class MolTest(unittest.TestCase):
 
@@ -126,7 +127,7 @@ class ParserTests(unittest.TestCase):
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
 
     def testIllegalChar(self):
-        self.check(["C"], ["£"])
+        self.check(["C"], ["!"])
 
     def testParentheses(self):
         good = ["C(=O)Cl"]
