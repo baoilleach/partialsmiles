@@ -25,3 +25,6 @@ TODO or WIP:
 1. Test that shortened versions of valid strings are also valid
 2. Test that shortened versions of invalid strings are sometimes invalid
 3. Rethink handling of aromatic bonds
+4. Consider Roger's traps for ring closures
+5. Add scripts I've been using for testing (1) and (2) above
+6. Add script to simplify user testing of functionality
