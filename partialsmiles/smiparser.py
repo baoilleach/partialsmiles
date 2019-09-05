@@ -332,6 +332,19 @@ class SmilesParser:
                 break
         return ans
 
+    def getAdjustedExplicitDegree(self, atom):
+        ans = atom.getExplicitDegree()
+        if not self.partial:
+            return ans
+        if atom == self.prev[-1]:
+            if self.bondchar or self.smi[-1] in "([":
+                ans += 1
+        for bcsymbol, (beg, symbol) in self.openbonds.items():
+            if beg == atom:
+                ans += 1
+                break
+        return ans
+
     def hasCommonValence(self, atom):
         data = valence.common_valencies.get(atom.element, None)
         # How to handle elements not in the list?
@@ -347,7 +360,7 @@ class SmilesParser:
         if valence.NeedsDblBond(atom) and not (self.partial and atom in self.incompleteAtoms):
             explval += 1
         # Neutral nitrogen can only have 3 bonds (even if hypervalent)
-        if atom.element == 7 and atom.charge == 0 and atom.getExplicitDegree() + atom.implh > 3:
+        if atom.element == 7 and atom.charge == 0 and self.getAdjustedExplicitDegree(atom) + atom.implh > 3:
             return False
         totalvalence = explval + atom.implh
         if totalvalence in allowed:

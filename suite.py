@@ -55,6 +55,9 @@ class ValenceTests(unittest.TestCase):
         # Don't raise valence errors for the following
         mol = ParseSmiles("c1O", partial=True)
         mol = ParseSmiles("c1cc(sc1=", partial=True)
+        # Raise
+        self.assertRaises(ValenceError, ParseSmiles, "CN(C)=", True)
+
 
 class MolTest(unittest.TestCase):
 
