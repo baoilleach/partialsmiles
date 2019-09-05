@@ -122,9 +122,9 @@ class ParserTests(unittest.TestCase):
 
     def check(self, good, bad):
         for smi in good:
-            ParseSmiles(smi, False)
+            ParseSmiles(smi, partial=False)
         for smi in bad:
-            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, partial=False)
 
     def testIllegalChar(self):
         self.check(["C"], ["!"])
@@ -142,18 +142,18 @@ class ParserTests(unittest.TestCase):
 
     def testDots(self):
         good = ["C.C"]
-        bad = [".C", "C..C", "C-.", "C."]
+        bad = [".C", "C..C", "C-.", "C.", "C. "]
         self.check(good, bad)
 
     def testBondChar(self):
         good = ["C-C#C", "C/C=C/Cl"]
-        bad = ["-C", "C.-C", "C-=C", "C--C", "C-(C)", "C="]
+        bad = ["-C", "C.-C", "C-=C", "C--C", "C-(C)", "C=", "C= "]
         self.check(good, bad)
 
     def testIsotope(self):
         good = ["[12CH4]"]
         bad = ["[0CH4]", "[1", "[12", "[123", "[v", "[C@", "[C@@",
-               "[CH", "[CH4", "[C+", "[C+2", "[C++"]
+               "[CH", "[CH4", "[C+", "[C+2", "[C++", "[C++ "]
         self.check(good, bad)
 
     def testBrackets(self):
