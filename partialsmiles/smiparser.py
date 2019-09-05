@@ -161,6 +161,12 @@ class SmilesParser:
             self.handleComponent()
 
         self.handleError(SMILESSyntaxError, self.validateSyntax())
+
+        self.setImplicitHydrogenCount()
+        self.incompleteAtoms = set(x[0] for x in self.openbonds.values())
+        if self.partial:
+            self.incompleteAtoms.update(x for x in self.prev if x is not None)
+
         self.handleError(ValenceError, self.validateValence())
         self.handleError(KekulizationFailure, self.validateKekulization())
         self.mol.openbonds = dict(self.openbonds)
@@ -183,7 +189,6 @@ class SmilesParser:
 
     def validateValence(self):
         # ----- Check for unusual valence -------
-        self.setImplicitHydrogenCount()
         for atom in self.mol.atoms:
             if not self.hasCommonValence(atom):
                 return ("Uncommon valence or charge state", self.smiidx[atom.idx])
@@ -200,9 +205,7 @@ class SmilesParser:
         # 3. Run the normal kekulization procedure after stripping aromaticity
         #    from the atoms in an incomplete system.
 
-        incompleteAtoms = set(x[0] for x in self.openbonds.values() if x[0].arom)
-        if self.partial and self.prev[-1] is not None and self.prev[-1].arom:
-            incompleteAtoms.add(self.prev[-1])
+        incompleteAromaticAtoms = set(x for x in self.incompleteAtoms if x.arom)
 
         # Find aromatic systems (networks of aromatic bonds)
         seen = [0]*len(self.mol.atoms)
@@ -217,7 +220,7 @@ class SmilesParser:
                 curr = stack.pop()
                 if seen[curr.idx]: continue
                 seen[curr.idx] = arom_system
-                if curr in incompleteAtoms:
+                if curr in incompleteAromaticAtoms:
                     incomplete_systems.add(arom_system)
                 for bond in curr.bonds:
                     if bond.arom:
@@ -348,7 +351,7 @@ class SmilesParser:
         totalvalence = explval + atom.implh
         if totalvalence in allowed:
             return True
-        if self.partial and atom in self.prev:
+        if self.partial and atom in self.incompleteAtoms:
             if totalvalence <= max(allowed):
                 return True # still possibly normal valence
         # Note to reader: you could comment out the following line if
