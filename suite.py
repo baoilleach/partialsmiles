@@ -51,9 +51,10 @@ class ValenceTests(unittest.TestCase):
         mol = ParseSmiles("C1(C)(C)N([O])C(C)(C)CCC1", partial=False)
         mol = ParseSmiles("FC[CH2]", partial=True)
 
-    def testBug(self):
-        # Don't raise a valence error for the following
+    def testBugs(self):
+        # Don't raise valence errors for the following
         mol = ParseSmiles("c1O", partial=True)
+        mol = ParseSmiles("c1cc(sc1=", partial=True)
 
 class MolTest(unittest.TestCase):
 

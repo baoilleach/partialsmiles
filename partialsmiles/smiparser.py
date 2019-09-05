@@ -343,7 +343,8 @@ class SmilesParser:
         if allowed is None:
             return False # unusual charge state
         explval = self.getAdjustedExplicitValence(atom)
-        if valence.NeedsDblBond(atom): # adjust valence for aromatic atoms
+        # adjust valence for aromatic atoms (erring on the side of caution for incompleteAtoms)
+        if valence.NeedsDblBond(atom) and not (self.partial and atom in self.incompleteAtoms):
             explval += 1
         # Neutral nitrogen can only have 3 bonds (even if hypervalent)
         if atom.element == 7 and atom.charge == 0 and atom.getExplicitDegree() + atom.implh > 3:
