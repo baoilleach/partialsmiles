@@ -112,10 +112,8 @@ class SmilesParser:
             if x in "CcONon[BPSFIbps*":
                 self.handleError(SMILESSyntaxError, self.parseAtom())
             elif x in '. \t>':
-                if not self.rulesToIgnore & 1 and (self.idx == 0 or smi[self.idx-1]=='.'):
-                    self.handleError(SMILESSyntaxError, "Empty molecules are not allowed")
-                if self.bondchar:
-                    self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
+                self.handleComponent()
+
                 self.prev[-1] = None
                 if x == '.':
                     self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
@@ -159,6 +157,9 @@ class SmilesParser:
             else:
                 self.handleError(SMILESSyntaxError, "Illegal character")
 
+        if not self.partial:
+            self.handleComponent()
+
         self.handleError(SMILESSyntaxError, self.validateSyntax())
         self.handleError(ValenceError, self.validateValence())
         self.handleError(KekulizationFailure, self.validateKekulization())
@@ -171,6 +172,14 @@ class SmilesParser:
                 raise errtype(msg[0], self.smi, msg[1])
             else:
                 raise errtype(msg, self.smi, self.idx)
+
+    def handleComponent(self):
+        # Check some conditions at the end of parsing a component
+        if not self.rulesToIgnore & 1:
+            if self.idx == 0 or self.smi[self.idx-1] in "." or (self.smi[self.idx-1] == '>' and self.reaction_part == 2):
+                self.handleError(SMILESSyntaxError, "Empty molecules are not allowed")
+        if self.bondchar:
+            self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
 
     def validateValence(self):
         # ----- Check for unusual valence -------

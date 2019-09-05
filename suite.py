@@ -142,12 +142,12 @@ class ParserTests(unittest.TestCase):
 
     def testDots(self):
         good = ["C.C"]
-        bad = [".C", "C..C", "C-."]
+        bad = [".C", "C..C", "C-.", "C."]
         self.check(good, bad)
 
     def testBondChar(self):
         good = ["C-C#C", "C/C=C/Cl"]
-        bad = ["-C", "C.-C", "C-=C", "C--C", "C-(C)"]
+        bad = ["-C", "C.-C", "C-=C", "C--C", "C-(C)", "C="]
         self.check(good, bad)
 
     def testIsotope(self):
@@ -179,7 +179,7 @@ class KekulizationTests(unittest.TestCase):
         self.assertEqual(sum(x==1 for x in bondorders), 3)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
 
-        mol = ParseSmiles("c1ccccc1.", False) # Will be kekulized
+        mol = ParseSmiles("c1ccccc1.", partial=True) # Will be kekulized
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 3)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
@@ -228,6 +228,20 @@ class AromaticBondTest(unittest.TestCase):
             mol = ParseSmiles(smi, rulesToIgnore=16)
             self.assertEqual(2, mol.bonds[0].order)
             self.assertTrue(mol.bonds[0].arom)
+
+class ReactionTests(unittest.TestCase):
+
+    def testBasic(self):
+        
+        good = ["C>O>N", "C>>N"]
+        empty = ["C>>", ">>N", ">O>", "C.>>.N"]
+        bad = ["C>O>N>S"]
+        for smi in good:
+            mol = ParseSmiles(smi, partial=False)
+        for smi in bad + empty:
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, partial=False)
+        for smi in empty:
+            mol = ParseSmiles(smi, partial=False, rulesToIgnore=1)
 
 if __name__ == "__main__":
     unittest.main()
