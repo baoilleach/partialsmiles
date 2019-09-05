@@ -213,6 +213,20 @@ class KekulizationTests(unittest.TestCase):
         for smi in smis:
             self.assertRaises(KekulizationFailure, ParseSmiles, smi, False)
 
+    
+    def testCoverage(self):
+        smis = ["c1ccn(=O)cc1", "Cs1(=O)ccccn1", # N/S-oxides
+                "c1c#cccc1", # benzyne
+                "n1cnc[n-]1", # from SMILES benchmark
+                "[nH]1cnnn1", # ditto
+                "n1cnco1",    # ditto
+                "n1(cno[cH+]1)C", # ditto
+                "O[p+]1(O)cccc1", # invented molecule
+                "[s-]1(O)cccc1"   # invented molecule
+                ]
+        for smi in smis:
+            mol = ParseSmiles(smi, partial=False)
+
 class AromaticBondTest(unittest.TestCase):
     
     def testBasic(self):

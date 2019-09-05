@@ -193,15 +193,3 @@ def Kekulize(mol):
             if needs_dbl_bond:
                 return idx # an atom in a system that is unkekulizable
     return None
-
-if __name__ == "__main__":
-    import smiparser as sp
-    # with open(r"D:\Work\smilesreading\2-aromaticsmiles\chembl\cdk_2.0.smi") as inp:
-    with open(r"D:\Work\smilesreading\2-aromaticsmiles\chembl\openbabel_dev4Aug17.smi") as inp:
-    # with open("hard.smi") as inp:
-        for line in inp:
-            smi = line.split()[0]
-            try:
-                mol = sp.ParseSmiles(smi, False)
-            except:
-                continue
