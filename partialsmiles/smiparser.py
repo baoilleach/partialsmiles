@@ -353,27 +353,30 @@ class SmilesParser:
 
     def hasCommonValence(self, atom):
         data = valence.common_valencies.get(atom.element, None)
+
         # How to handle elements not in the list?
         if data is None:
             if atom.element == 0:
                 return True # How to handle asterisk
             return False # Alternatively, you may wish to return True
+
         allowed = data.get(atom.charge, None)
         if allowed is None:
             return False # unusual charge state
+
         explval = self.getAdjustedExplicitValence(atom)
         # adjust valence for aromatic atoms (erring on the side of caution for incompleteAtoms)
         if valence.NeedsDblBond(atom) and not (self.partial and atom in self.incompleteAtoms):
             explval += 1
-        # Neutral nitrogen can only have 3 bonds (even if hypervalent)
-        if atom.element == 7 and atom.charge == 0 and self.getAdjustedExplicitDegree(atom) + atom.implh > 3:
-            return False
+
         totalvalence = explval + atom.implh
         if totalvalence in allowed:
             return True
+
         if self.partial and atom in self.incompleteAtoms:
             if totalvalence <= max(allowed):
                 return True # still possibly normal valence
+
         # Note to reader: you could comment out the following line if
         # you don't need to support TEMPO-like (stable) oxygen radicals
         if atom.element==8 and atom.charge==0 and explval==1 and atom.implh==0 and valence.IsAttachedToNitrogen(atom): # TEMPO-like

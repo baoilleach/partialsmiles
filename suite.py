@@ -53,10 +53,14 @@ class ValenceTests(unittest.TestCase):
 
     def testBugs(self):
         # Don't raise valence errors for the following
-        mol = ParseSmiles("c1O", partial=True)
-        mol = ParseSmiles("c1cc(sc1=", partial=True)
-        # Raise
+        good = ["c1O", "c1cc(sc1="]
+        for smi in good:
+            mol = ParseSmiles(smi, partial=True)
+
         self.assertRaises(ValenceError, ParseSmiles, "CN(C)=", True)
+        # The following is 5-valent at least, and we only allow 3-valent
+        # nitrogens.
+        self.assertRaises(ValenceError, ParseSmiles, "CCN(=O)(", True)
 
 
 class MolTest(unittest.TestCase):
@@ -255,7 +259,8 @@ class KekulizationTests(unittest.TestCase):
 
     
     def testCoverage(self):
-        smis = ["c1ccn(=O)cc1", "Cs1(=O)ccccn1", # N/S-oxides
+        smis = [
+                "Cs1(=O)ccccn1", # S-oxides
                 "c1c#cccc1", # benzyne
                 "n1cnc[n-]1", # from SMILES benchmark
                 "[nH]1cnnn1", # ditto
