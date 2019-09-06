@@ -106,12 +106,17 @@ class RuleTests(unittest.TestCase):
         ParseSmiles(smi, False, 2)
 
     def testRuleThree(self):
-        """Whether to allow an open parenthesis without a preceding
-        atom like (CC)"""
-        smis = ["(CC)", "C.(CC)"]
+        """Whether to require that the final branch be unparenthesised"""
+        smis = ["C(O(C))", "C(O).C"]
         for smi in smis:
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
+            ParseSmiles(smi, False, 4)
+
+        smis = ["C(O)"] # these are fine as partial but not otherwise
+        for smi in smis:
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+            ParseSmiles(smi, True)
             ParseSmiles(smi, False, 4)
 
     def testRuleFour(self):

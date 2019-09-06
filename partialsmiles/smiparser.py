@@ -130,6 +130,8 @@ class SmilesParser:
             elif x == ')':
                 if not self.rulesToIgnore & 2 and (self.idx > 1 and smi[self.idx-1]=='('):
                     self.handleError(SMILESSyntaxError, "Empty branches are not allowed")
+                if not self.rulesToIgnore & 4 and self.idx > 1 and smi[self.idx-1]==')':
+                    self.handleError(SMILESSyntaxError, ("The final branch should not be within parentheses", self.idx-1))
                 if self.bondchar:
                     self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
                 self.prev.pop()
@@ -137,7 +139,7 @@ class SmilesParser:
                     self.handleError(SMILESSyntaxError, "Unmatched close parenthesis")
                 self.idx += 1
             elif x == '(':
-                if not self.rulesToIgnore & 4 and (self.prev[-1] is None or smi[self.idx-1]=='('):
+                if self.prev[-1] is None or smi[self.idx-1]=='(':
                     self.handleError(SMILESSyntaxError, "An atom must precede an open parenthesis")
                 if self.bondchar:
                     self.handleError(SMILESSyntaxError, "A bond symbol should not precede an open parenthesis")
@@ -192,6 +194,8 @@ class SmilesParser:
                 self.handleError(SMILESSyntaxError, "Empty molecules are not allowed")
         if self.bondchar:
             self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
+        if not self.rulesToIgnore & 4 and self.idx > 1 and self.smi[self.idx-1]==')':
+            self.handleError(SMILESSyntaxError, ("The final branch should not be within parentheses", self.idx-1))
 
     def validateValence(self):
         # ----- Check for unusual valence -------
