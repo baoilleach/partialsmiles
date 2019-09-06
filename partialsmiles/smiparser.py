@@ -153,6 +153,12 @@ class SmilesParser:
             elif x.isdigit() or x=='%':
                 if self.prev[-1] is None:
                     self.handleError(SMILESSyntaxError, "An atom must precede a bond closure symbol")
+                if not self.rulesToIgnore & 32:
+                    precedingtext = self.smi[self.smiidx[self.prev[-1].idx]+1:self.idx]
+                    if ")" in precedingtext:
+                        self.handleError(SMILESSyntaxError, "Ring closure symbols must immediately follow an atom")
+                    if "(" in precedingtext:
+                        self.handleError(SMILESSyntaxError, "Ring closure symbols should not be in parentheses")
                 self.handleError(SMILESSyntaxError, self.handleBCSymbol())
             else:
                 self.handleError(SMILESSyntaxError, "Illegal character")

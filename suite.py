@@ -126,6 +126,14 @@ class RuleTests(unittest.TestCase):
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
             ParseSmiles(smi, False, 16)
 
+    def testRuleSix(self):
+        """Whether to require ring closure symbols immediately after atoms"""
+        smis = ["C(1)CCC1", "C(CCC1)1"]
+        for smi in smis:
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
+            ParseSmiles(smi, False, 32)
+
 class ParserTests(unittest.TestCase):
 
     def check(self, good, bad):
@@ -173,6 +181,30 @@ class ParserTests(unittest.TestCase):
         good = ["[NH4+]", "[NH3++]", "[CH3-]"]
         bad = ["[N4+H]", "[NH+-]"]
         self.check(good, bad)
+
+    def testTripTests(self):
+        # Roger's from https://www.nextmovesoftware.com/talks/Sayle_SmilesPlus_InChI_201908.pdf
+        smis = """C1.C1
+# C%00CC%00 # we treat as 0
+C(C.C)C
+C(C)1CC1
+C(.C)
+C()
+(CO)=O
+(C)
+.C
+C..C
+C.
+C=(O)C
+C((C))
+C.(C)
+C1CC(=1)
+C1CC(1)
+C(C.)
+C==C""".split("\n")
+        for smi in smis:
+            if smi.startswith("#"): continue
+            self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
 
 class KekulizationTests(unittest.TestCase):
 
