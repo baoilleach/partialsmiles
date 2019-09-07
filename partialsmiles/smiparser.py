@@ -322,10 +322,10 @@ class SmilesParser:
     def getAdjustedExplicitValence(self, atom):
         """Adjust the explicit valence for the attachee in partial SMILES
         
-        For example: "C(" has explicit valence of 0, but adjusted to 1
+        For example: "C(" has explicit valence of 0, but adjusted to 2
         For example: "C=" has explicit valence of 0, but adjusted to 2
-        "C" -> 0, whether or not dots are allowed
-        "C(" -> 1 (either way)
+        "C" -> 0
+        "C(" -> 2
         
         """
         ans = atom.getExplicitValence()
@@ -335,6 +335,14 @@ class SmilesParser:
             if self.bondchar:
                 ans += ToBondOrder(self.bondchar)
             elif self.smi[-1] in "([":
+                ans += 1
+            if not self.rulesToIgnore & 4:
+                if len(self.prev) > 1 and self.prev[-1] == self.prev[-2]:
+                    ans += 1 # just opened a new branch
+                if self.smi[-1] == ')':
+                    ans += 1 # just closed a branch, but there must be another branch
+        elif atom in self.prev:
+            if not self.rulesToIgnore & 4:
                 ans += 1
         for bcsymbol, (beg, symbol) in self.openbonds.items():
             if beg == atom:

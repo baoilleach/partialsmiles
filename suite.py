@@ -8,29 +8,45 @@ class ValenceTests(unittest.TestCase):
         data = [
                 ("C", 0), # might turn out to be the final char
                 ("C[", 1),
-                ("C1(", 2),
+                ("C(", 2),
+                ("C1(", 3),
                 ("C=[", 2),
                 ("C=", 2),
                 ("C.", 0),
                 ("C1", 1),
                 ("C=1", 2),
-                ("C(C)", 1),
-                ]
-        for smi, val in data:
-            sp = SmilesParser(True, 0)
-            mol = sp.parse(smi)
-            atom = mol.atoms[-1]
-            self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
-        data = [
-                ("C(", 1),
-                ("C(C)(", 2),
-                ("C(=C)(=", 4),
+                ("C(C)", 2), # rule 3
                 ]
         for smi, val in data:
             sp = SmilesParser(True, 0)
             mol = sp.parse(smi)
             atom = mol.atoms[0]
             self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
+        data = [
+                ("C(", 2),
+                ("C(C)(", 3),
+                ("S(=C)(=", 5),
+                ]
+        for smi, val in data:
+            sp = SmilesParser(True, 0)
+            mol = sp.parse(smi)
+            atom = mol.atoms[0]
+            self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
+
+    def testBranched(self):
+        smi = "C(C(C)("
+        val = [2, 4, 1]
+        sp = SmilesParser(True, 0)
+        mol = sp.parse(smi)
+        for v, atom in zip(val, mol.atoms):
+            self.assertEqual(sp.getAdjustedExplicitValence(atom), v)
+
+        smi = "C(C(C)"
+        val = [2, 3, 1]
+        sp = SmilesParser(True, 0)
+        mol = sp.parse(smi)
+        for v, atom in zip(val, mol.atoms):
+            self.assertEqual(sp.getAdjustedExplicitValence(atom), v)
 
     def testParser(self):
         smis = ["C(C)(C)(C)(C)C", "[N+5]"]
@@ -61,6 +77,14 @@ class ValenceTests(unittest.TestCase):
         # The following is 5-valent at least, and we only allow 3-valent
         # nitrogens.
         self.assertRaises(ValenceError, ParseSmiles, "CCN(=O)(", True)
+
+    def testImpliedValence(self):
+        # Given Rule 3, an open parenthesis implies at least two
+        # nbrs.
+        self.assertRaises(ValenceError, ParseSmiles, "C1CN1(", True)
+        mol = ParseSmiles("C1CN1(", True, 4)
+        self.assertRaises(ValenceError, ParseSmiles, "CN(=", True)
+        mol = ParseSmiles("CN(=", True, 4)
 
 
 class MolTest(unittest.TestCase):
