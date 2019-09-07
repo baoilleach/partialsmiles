@@ -342,19 +342,6 @@ class SmilesParser:
                 break
         return ans
 
-    def getAdjustedExplicitDegree(self, atom):
-        ans = atom.getExplicitDegree()
-        if not self.partial:
-            return ans
-        if atom == self.prev[-1]:
-            if self.bondchar or self.smi[-1] in "([":
-                ans += 1
-        for bcsymbol, (beg, symbol) in self.openbonds.items():
-            if beg == atom:
-                ans += 1
-                break
-        return ans
-
     def hasCommonValence(self, atom):
         data = valence.common_valencies.get(atom.element, None)
 
