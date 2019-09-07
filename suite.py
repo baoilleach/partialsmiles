@@ -86,6 +86,12 @@ class ValenceTests(unittest.TestCase):
         self.assertRaises(ValenceError, ParseSmiles, "CN(=", True)
         mol = ParseSmiles("CN(=", True, 4)
 
+    def testBug(self):
+        # The latter was failing with a valence error, but the former was
+        # not
+        smis = ["ncC(N)(=O)[O", "ncC(N)(=O)["]
+        for smi in smis:
+            self.assertRaises(ValenceError, ParseSmiles, smi, True)
 
 class MolTest(unittest.TestCase):
 

@@ -104,9 +104,10 @@ class SmilesParser:
         self.hcount = []
         self.idx = 0
         self.prev = [None]
-        self.bondchar = None
         self.smiidx = []
         self.reaction_part = 0
+        self.bondchar = None
+        self.parsing_atom = False
         while self.idx < self.N:
             x = smi[self.idx]
             if x in "CcONon[BPSFIbps*":
@@ -334,7 +335,7 @@ class SmilesParser:
         if atom == self.prev[-1]:
             if self.bondchar:
                 ans += ToBondOrder(self.bondchar)
-            elif self.smi[-1] in "([":
+            elif self.parsing_atom or self.smi[-1] == '(':
                 ans += 1
             if not self.rulesToIgnore & 4:
                 if len(self.prev) > 1 and self.prev[-1] == self.prev[-2]:
@@ -399,6 +400,7 @@ class SmilesParser:
 
     def parseAtom(self):
         x = self.smi[self.idx]
+        self.parsing_atom = True
 
         if x == '[':
             end, msg = self.incrementAndTestForEnd()
@@ -514,6 +516,7 @@ class SmilesParser:
 
         # Reset
         self.bondchar = None
+        self.parsing_atom = False
 
 valencemodel = {
         5: [3], 6: [4], 7: [3, 5], 15: [3, 5],
