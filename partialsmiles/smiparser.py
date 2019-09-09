@@ -348,7 +348,6 @@ class SmilesParser:
         for bcsymbol, (beg, symbol) in self.openbonds.items():
             if beg == atom:
                 ans += 1 if not symbol else ToBondOrder(symbol)
-                break
         return ans
 
     def hasCommonValence(self, atom):

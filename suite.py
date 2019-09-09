@@ -77,6 +77,9 @@ class ValenceTests(unittest.TestCase):
         # The following is 5-valent at least, and we only allow 3-valent
         # nitrogens.
         self.assertRaises(ValenceError, ParseSmiles, "CCN(=O)(", True)
+        # The second bond closure was not contributing to the
+        # adjusted valence due to a 'break' statement
+        self.assertRaises(ValenceError, ParseSmiles, "C=C3=1", True)
 
     def testImpliedValence(self):
         # Given Rule 3, an open parenthesis implies at least two
