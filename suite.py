@@ -98,10 +98,12 @@ class ValenceTests(unittest.TestCase):
 
     def testEffectOfOpenRing(self):
         # If there's a ring opening, there must be an additional
-        # valence.
+        # valence (if at the outermost branching level).
         ParseSmiles("C1C=N", True)
         self.assertRaises(ValenceError, ParseSmiles, "C1C=N2", True)
         ParseSmiles("C1C=NC", True)
+        ParseSmiles("c1(=O", True)
+        ParseSmiles("c1(=O)", True)
 
 class MolTest(unittest.TestCase):
 

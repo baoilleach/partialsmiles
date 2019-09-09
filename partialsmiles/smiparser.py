@@ -335,7 +335,7 @@ class SmilesParser:
         if atom == self.prev[-1]:
             if self.bondchar:
                 ans += ToBondOrder(self.bondchar)
-            elif self.parsing_atom or self.smi[-1] == '(' or self.openbonds:
+            elif self.parsing_atom or self.smi[-1] == '(' or (self.openbonds and len(self.prev) == 1 and self.smi[-1] != ')'):
                 ans += 1
             if not self.rulesToIgnore & 4:
                 if len(self.prev) > 1 and self.prev[-1] == self.prev[-2]:
