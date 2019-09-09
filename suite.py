@@ -13,8 +13,8 @@ class ValenceTests(unittest.TestCase):
                 ("C=[", 2),
                 ("C=", 2),
                 ("C.", 0),
-                ("C1", 1),
-                ("C=1", 2),
+                ("C1", 2),
+                ("C=1", 3),
                 ("C(C)", 2), # rule 3
                 ]
         for smi, val in data:
@@ -95,6 +95,13 @@ class ValenceTests(unittest.TestCase):
         smis = ["ncC(N)(=O)[O", "ncC(N)(=O)["]
         for smi in smis:
             self.assertRaises(ValenceError, ParseSmiles, smi, True)
+
+    def testEffectOfOpenRing(self):
+        # If there's a ring opening, there must be an additional
+        # valence.
+        ParseSmiles("C1C=N", True)
+        self.assertRaises(ValenceError, ParseSmiles, "C1C=N2", True)
+        ParseSmiles("C1C=NC", True)
 
 class MolTest(unittest.TestCase):
 
