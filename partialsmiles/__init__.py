@@ -24,7 +24,7 @@
 
 __name__ = "partialsmiles"
 __author__ = "Noel M O'Boyle"
-__version__ = "0.3"
+__version__ = "0.4"
 __license__ = "MIT"
 __copyright__ = "Noel O'Boyle 2019"
 
