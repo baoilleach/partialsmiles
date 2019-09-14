@@ -1,6 +1,6 @@
-from distutils.core import setup
+import setuptools
 
-setup(
+setuptools.setup(
         name="partialsmiles",
         version="0.4",
         author="Noel M. O'Boyle",
