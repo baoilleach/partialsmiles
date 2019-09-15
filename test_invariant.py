@@ -13,7 +13,9 @@ INCLUDE_ORIGINAL = False
 def two_molecules(fname):
     with open(fname) as inp:
         data = []
-        for line in inp:
+        for idx, line in enumerate(inp):
+            if idx % 10 == 0:
+                print(idx, file=sys.stderr)
             smi = line.split()[0]
             if len(smi) > 30 or len(smi) < 4: continue
             data.append(smi)
@@ -33,29 +35,33 @@ def mutants(fname):
 
 if __name__ == "__main__":
     fname = sys.argv[1]
-    for idx, smi in enumerate(mutants(sys.argv[1])):
-        if idx % 100 == 0: print(idx, file=sys.stderr)
+    for smi in mutants(sys.argv[1]):
+        try:
+            # Does it fail for a substring, but then pass for a
+            # longer string? (Or the whole treated as a complete string?)
+            substring_failed = False
+            for i in range(1, len(smi)+1):
+                sub = smi[:i]
+                try:
+                    ps.ParseSmiles(sub, partial=True)
+                except ps.Error:
+                    substring_failed = True
+                else:
+                    if substring_failed:
+                        print("ERROR!")
+                        print(smi)
+                        continue
 
-        # Does it fail for a substring, but then pass for a
-        # longer string? (Or the whole treated as a complete string?)
-        substring_failed = False
-        for i in range(1, len(smi)+1):
-            sub = smi[:i]
             try:
-                ps.ParseSmiles(sub, partial=True)
+                ps.ParseSmiles(smi, partial=False)
             except ps.Error:
-                substring_failed = True
+                pass
             else:
                 if substring_failed:
                     print("ERROR!")
                     print(smi)
-                    continue
-
-        try:
-            ps.ParseSmiles(smi, partial=False)
-        except ps.Error:
-            pass
-        else:
-            if substring_failed:
-                print("ERROR!")
-                print(smi)
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except:
+            print("Exception!")
+            print(smi)
