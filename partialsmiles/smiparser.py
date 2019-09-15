@@ -249,7 +249,7 @@ class SmilesParser:
 
         # Kekulize
         result = kekulize.Kekulize(self.mol)
-        if result:
+        if result is not None:
             return ("Aromatic system cannot be kekulized", self.smiidx[result])
 
         # Reset aromaticity
