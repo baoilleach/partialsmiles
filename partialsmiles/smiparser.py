@@ -437,6 +437,8 @@ class SmilesParser:
                 self.idx += 1
             else:
                 symbol = self.smi[self.idx]
+                if symbol.upper() not in elements:
+                    return "An element symbol is required"
             end, msg = self.incrementAndTestForEnd()
             if end:
                 return msg

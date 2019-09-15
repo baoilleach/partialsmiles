@@ -44,9 +44,11 @@ if __name__ == "__main__":
     full_status = PASS
     try:
         ps.ParseSmiles(smi)
-    except Exception as e:
+    except ps.Error as e:
         print("FAIL\n<<<\n" + str(e) + "\n>>>")
         full_status = FAIL
+    except Exception:
+        raise
     else:
         print("OK")
 
@@ -54,9 +56,11 @@ if __name__ == "__main__":
     partial_status = PASS
     try:
         ps.ParseSmiles(smi, partial=True)
-    except Exception as e:
+    except ps.Error as e:
         print("FAIL\n<<<\n" + str(e) + "\n>>>")
         partial_status = FAIL
+    except Exception:
+        raise
     else:
         print("OK")
 
@@ -65,10 +69,12 @@ if __name__ == "__main__":
     try:
         for i in range(1, len(smi)): 
             ps.ParseSmiles(smi[:i], partial=True)
-    except Exception as e:
+    except ps.Error as e:
         print("FAIL at %s" % smi[:i])
         print("<<<\n" + str(e) + "\n>>>")
         substring_status = FAIL
+    except Exception:
+        raise
     else:
         print("OK")
 

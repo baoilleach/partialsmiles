@@ -205,7 +205,7 @@ class ParserTests(unittest.TestCase):
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, partial=False)
 
     def testIllegalChar(self):
-        self.check(["C"], ["!"])
+        self.check(["C"], ["!", "CC[L]"])
 
     def testParentheses(self):
         good = ["C(=O)Cl"]
