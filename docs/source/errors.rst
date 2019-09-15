@@ -12,6 +12,8 @@ attempts to warn about these errors at the earliest opportunity.
 3. Kekulization errors - another semantic error, where an aromatic system
    cannot be kekulized
 
+Note that detection of stereochemistry-related errors is not currently supported.
+
 The following example shows how to catch all exceptions raised by
 the parser with a single ``except`` statement. Note that you may
 prefer to individually catch each of the three types of exception for
