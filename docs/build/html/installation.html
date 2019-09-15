@@ -1,0 +1,138 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Installation and Use &#8212; partialsmiles 0.4 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Errors" href="errors.html" />
+    <link rel="prev" title="Introduction" href="introduction.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="installation-and-use">
+<h1>Installation and Use<a class="headerlink" href="#installation-and-use" title="Permalink to this headline">¶</a></h1>
+<p><strong>partialsmiles</strong> is a Python library. It can be installed with <strong class="command">pip</strong>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="o">-</span><span class="n">U</span> <span class="n">partialsmiles</span>
+</pre></div>
+</div>
+<p>The library provides a single API function, <code class="docutils literal notranslate"><span class="pre">ParseSmiles</span></code>.</p>
+<dl class="function">
+<dt id="ParseSmiles">
+<code class="sig-name descname">ParseSmiles</code><span class="sig-paren">(</span><em class="sig-param">smi</em>, <em class="sig-param">partial=False</em><span class="sig-paren">)</span><a class="headerlink" href="#ParseSmiles" title="Permalink to this definition">¶</a></dt>
+<dd><p>Parse a SMILES string, by default treating it as a complete SMILES string.
+Note that even where <code class="docutils literal notranslate"><span class="pre">partial</span></code> is set to <code class="docutils literal notranslate"><span class="pre">True</span></code>, appending a space or
+a tab causes it to be treated as a complete string.</p>
+</dd></dl>
+
+<p>To test, try the following at the Python prompt.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">partialsmiles</span> <span class="k">as</span> <span class="nn">ps</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ps</span><span class="o">.</span><span class="n">__version__</span>
+<span class="go">1.0</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mol</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">ParseSmiles</span><span class="p">(</span><span class="s2">&quot;CC(&quot;</span><span class="p">,</span> <span class="n">partial</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="gt">Traceback (most recent call last):</span>
+<span class="c">...</span>
+<span class="gr">partialsmiles.exceptions.SMILESSyntaxError</span>: <span class="n">1 branch has not been closed</span>
+<span class="go">  CC(</span>
+<span class="go">     ^</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">mol</span> <span class="o">=</span> <span class="n">ps</span><span class="o">.</span><span class="n">ParseSmiles</span><span class="p">(</span><span class="s2">&quot;CC(&quot;</span><span class="p">,</span> <span class="n">partial</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="c1"># no error message</span>
+</pre></div>
+</div>
+<p>You should now read the rest of the documentation (there isn’t that much) to avoid any surprises!</p>
+<p>If you have any problems or find a bug, please file an issue at <a class="reference external" href="https://github.com/baoilleach/partialsmiles/issues">https://github.com/baoilleach/partialsmiles/issues</a>.</p>
+<p>If this library is used to obtain results for publication, please acknowledge its use, including the version and any modifications made. One way to cite it would be <code class="docutils literal notranslate"><span class="pre">N.M.</span> <span class="pre">O'Boyle.</span> <span class="pre">partialsmiles,</span> <span class="pre">version</span> <span class="pre">1.0.</span> <span class="pre">Available</span> <span class="pre">from</span> <span class="pre">https://github.com/baoilleach/partialsmiles</span></code>.</p>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">partialsmiles</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Installation and Use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="discussion.html">Discussion</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="introduction.html" title="previous chapter">Introduction</a></li>
+      <li>Next: <a href="errors.html" title="next chapter">Errors</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Noel M O'Boyle.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

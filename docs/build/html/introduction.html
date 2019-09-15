@@ -1,0 +1,116 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Introduction &#8212; partialsmiles 0.4 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Installation and Use" href="installation.html" />
+    <link rel="prev" title="partialsmiles" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="introduction">
+<span id="id1"></span><h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline">¶</a></h1>
+<p><strong>partialsmiles</strong> is a Python library that provides a validating SMILES parser with support for partial SMILES. The parser checks syntax, ability to kekulize aromatic system, and checks whether atoms’ valences appear on a list of allowed valences.</p>
+<p>The main use of the library is to accept or reject SMILES strings as they are generated character-by-character by a machine-learning method. Previously the only way to check such strings was after the entire string was generated, a process that could take 10s of seconds. Using <strong>partialsmiles</strong>, SMILES strings with invalid syntax or problematic semantics can be detected during the generation, allowing them to be discarded or for alternate tokens to be suggested.</p>
+<p>Some other toolkits (such as OEChem and the CDK) can read partial SMILES; should you use these instead? Certainly, if they meet your needs. Their goal is to return a molecule object that captures bonding information so far (useful for ‘depiction as you type’, for example), perhaps converting partial aromatic rings to single bonds and unmatched ring connections to dangling bonds. This is in contrast to the goal of <strong>partialsmiles</strong> which is to work out whether the partial SMILES string could be the prefix of a complete SMILES string that would be accepted by the parser. For example, <code class="docutils literal notranslate"><span class="pre">CC(C)(</span></code> may be read as propane by other readers, but <strong>partialsmiles</strong> will reject it with a valence error as completion of the string will lead to a five or more valent carbon (see <a class="reference internal" href="errors.html#valence-errors"><span class="std std-ref">Valence errors</span></a>).</p>
+<p>A secondary goal of this project is to make available a permissively-licensed SMILES parser that correctly reads all aromatic systems in the SMILES reading benchmark. This is with the hope to encourage improvements in existing parsers.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The literature in this area is full of terms such as “valid/invalid SMILES”, or worse still “valid/invalid molecules”, vague terms which are never defined and have no intrinsic meaning except in the context of syntax. Here I use the terms accepted or rejected. The criteria for acceptance or rejection are described in the section <a class="reference internal" href="errors.html#errors"><span class="std std-ref">Errors</span></a>. Users may wish to use phrases such as “95% of SMILES were accepted by the partialsmiles library” or “I didn’t use the partialsmiles library because it made a fuss about terminology”.</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">partialsmiles</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation and Use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l1"><a class="reference internal" href="discussion.html">Discussion</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">partialsmiles</a></li>
+      <li>Next: <a href="installation.html" title="next chapter">Installation and Use</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Noel M O'Boyle.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

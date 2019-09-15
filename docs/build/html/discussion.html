@@ -1,0 +1,140 @@
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta charset="utf-8" />
+    <title>Discussion &#8212; partialsmiles 0.4 documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Errors" href="errors.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="discussion">
+<h1>Discussion<a class="headerlink" href="#discussion" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Permalink to this headline">¶</a></h2>
+<p>How can you be sure that the library does what I say it does?</p>
+<p>To begin with there is a test suite, admittedly fairly small, but which provides high code coverage and is useful for catching regressions.</p>
+<p>Really, most of the work winkling out bugs is done by:</p>
+<ol class="arabic simple">
+<li><p>Testing against an existing codebase (Open Babel) to look for cases where there is disagreement in whether a particular complete SMILES is accepted/rejected.</p></li>
+<li><p>Testing the invariant, that <em>for any complete SMILES string, if any prefix is rejected then any longer prefix (including the complete SMILES) should also be rejected</em>. The corrollary is that if a complete SMILES is accepted, then any prefix of that should also be accepted.</p></li>
+</ol>
+<p>These are tested using a large number of SMILES strings which I construct on-the-fly from ChEMBL:</p>
+<ol class="arabic simple">
+<li><p>Read two SMILES strings at a time, A and B</p></li>
+<li><p>Construct new SMILES strings by combining every prefix of A with every suffix of B, and <em>vice versa</em></p></li>
+</ol>
+<p>So how can you be sure that the library does what I say it does? You can’t. Not until you run the test scripts, which are all included:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="n">suite</span><span class="o">.</span><span class="n">py</span>
+<span class="gp">...</span>
+<span class="go">OK</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">python</span> <span class="n">test_invariant</span><span class="o">.</span><span class="n">py</span> <span class="n">chembl</span><span class="o">.</span><span class="n">smi</span>
+<span class="go">0</span>
+<span class="go">100</span>
+<span class="gp">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="alternate-tokens">
+<h2>Alternate tokens<a class="headerlink" href="#alternate-tokens" title="Permalink to this headline">¶</a></h2>
+<p>In the <a class="reference internal" href="introduction.html#introduction"><span class="std std-ref">Introduction</span></a>, I mention that one application of the library might be to flag a problem so that an alternate token could be suggested instead. Is this actually feasible? And even if so, should one do it?</p>
+<p>…</p>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">partialsmiles</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="installation.html">Installation and Use</a></li>
+<li class="toctree-l1"><a class="reference internal" href="errors.html">Errors</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Discussion</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#testing">Testing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#alternate-tokens">Alternate tokens</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="errors.html" title="previous chapter">Errors</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" />
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+
+
+
+
+
+
+
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Noel M O'Boyle.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 2.2.0</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.12</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>
