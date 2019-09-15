@@ -335,14 +335,14 @@ class AromaticBondTest(unittest.TestCase):
     def testBasic(self):
         smis = ["cc", "c:c", "C:C"] # What about c=c? Is this [C]=[C]?
         for smi in smis:
-            mol = ParseSmiles(smi)
+            mol = ParseSmiles(smi, rulesToIgnore=64)
             self.assertEqual(2, mol.bonds[0].order)
             self.assertTrue(mol.bonds[0].arom)
 
     def testRingClosures(self):
         smis = ["c1.c1", "c1.c:1", "C1.C:1"]
         for smi in smis:
-            mol = ParseSmiles(smi, rulesToIgnore=16)
+            mol = ParseSmiles(smi, rulesToIgnore=16|64)
             self.assertEqual(2, mol.bonds[0].order)
             self.assertTrue(mol.bonds[0].arom)
 

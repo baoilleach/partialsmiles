@@ -151,7 +151,7 @@ class SmilesParser:
                     self.handleError(SMILESSyntaxError, "An atom must precede a bond symbol")
                 if self.bondchar:
                     self.handleError(SMILESSyntaxError, "Only a single bond symbol should be used")
-                if not self.rulesToIgnore & 64:
+                if not self.rulesToIgnore & 64 and x == ':':
                     self.handleError(SMILESSyntaxError, "Aromatic bond symbols are rejected by default")
                 self.bondchar = x
                 self.idx += 1
