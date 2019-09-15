@@ -185,6 +185,17 @@ class RuleTests(unittest.TestCase):
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
             ParseSmiles(smi, False, 32)
 
+    def testRuleSeven(self):
+        """Whether to reject aromatic bond symbols"""
+        # Aromatic bond symbols are not needed in a SMILES string
+        # - an aromatic bond connecting two lowercase atoms is implicit
+        # - the meaning of an aromatic bond attached to an uppercase atom
+        #   is a matter of intense debate
+        smi = "c1:c:c:c:c:c1"
+        self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, False)
+        self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, True)
+        ParseSmiles(smi, False, 64)
+
 class ParserTests(unittest.TestCase):
 
     def check(self, good, bad):
