@@ -233,6 +233,8 @@ class ParserTests(unittest.TestCase):
         bad = ["[0CH4]", "[1", "[12", "[123", "[v", "[C@", "[C@@",
                "[CH", "[CH4", "[C+", "[C+2", "[C++", "[C++ "]
         self.check(good, bad)
+        self.assertEqual(ParseSmiles("[12CH4]").atoms[0].isotope, 12)
+        self.assertEqual(ParseSmiles("[123CH4]").atoms[0].isotope, 123)
 
     def testBrackets(self):
         good = ["[16CH4]", "[NH3++]", "C[C@@H](C)C"]

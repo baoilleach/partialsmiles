@@ -38,7 +38,7 @@ class Atom:
         self.isotope = 0
 
     def __repr__(self):
-        return "Atom(elem=%d,chg=%d,idx=%d)" % (self.element, self.charge, self.idx)
+        return "Atom(elem={},chg={},idx={})".format(self.element, self.charge, self.idx)
 
     def getExplicitDegree(self):
         return len(self.bonds)
@@ -79,16 +79,8 @@ class Molecule:
                 return nbr_bond
         return None
 
-    def debug(self):
-        for i, atom in enumerate(self.atoms):
-            print("Atom: %d %s charge %d implh %d expdeg %d iso %d arom %d" % (i, atom.element, atom.charge, atom.implh, atom.getExplicitDegree(), atom.isotope, atom.arom))
-        for i, bond in enumerate(self.bonds):
-            print("Bond: %d %d->%d bo %d arom %d" % (i, bond.beg.idx, bond.end.idx, bond.order, bond.arom))
-        for bcsymbol, (atom, bondchar) in self.openbonds.items():
-            print("Open bond: %d->? bc '%s'" % (atom.idx, bondchar))
-
     def __repr__(self):
-        return "Molecule(atoms=%s)" % [str(x) for x in self.atoms]
+        return "Molecule(atoms={})".format([str(x) for x in self.atoms])
 
 class SmilesParser:
 
