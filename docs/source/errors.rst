@@ -30,7 +30,7 @@ may mask errors in your own code.
             ps.ParseSmiles("c1cccc1", partial=False)
         except ps.Error as e:
             print(repr(e), file=sys.stderr)
-            # KekulizationFailure('Aromatic system cannot be kekulized', 'c1cccc1', 5)
+            # KekulizationError('Aromatic system cannot be kekulized', 'c1cccc1', 5)
             print(str(e), file=sys.stderr)
             # Aromatic system cannot be kekulized
             #  c1cccc1
@@ -119,7 +119,7 @@ Kekulization errors can be caught as follows. Note that the indicated location o
             ps.ParseSmiles("C(C)(C)(C)(C)C", partial=False)
         except ps.KekulizationError as e:
             print(repr(e), file=sys.stderr)
-            # KekulizationFailure('Aromatic system cannot be kekulized', 'c1cc[nH]cc1', 3)
+            # KekulizationError('Aromatic system cannot be kekulized', 'c1cc[nH]cc1', 3)
             print(str(e), file=sys.stderr)
             # Aromatic system cannot be kekulized
             #   c1cc[nH]cc1

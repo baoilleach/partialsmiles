@@ -315,7 +315,7 @@ class KekulizationTests(unittest.TestCase):
                 "s1cc2nc3c(n2n1)cccc3"
                 ]
         for smi in smis:
-            self.assertRaises(KekulizationFailure, ParseSmiles, smi, False)
+            self.assertRaises(KekulizationError, ParseSmiles, smi, False)
 
     
     def testCoverage(self):

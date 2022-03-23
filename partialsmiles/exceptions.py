@@ -39,7 +39,7 @@ class SMILESSyntaxError(Error):
         idx -- index of the character in the SMILES when the error occurred
     """
 
-class KekulizationFailure(Error):
+class KekulizationError(Error):
     """Exception raised when an aromatic system cannot be kekulized
 
     Attributes:

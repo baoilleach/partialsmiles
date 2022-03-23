@@ -29,4 +29,4 @@ __license__ = "MIT"
 __copyright__ = "Noel O'Boyle 2019"
 
 from .smiparser import ParseSmiles
-from .exceptions import Error, SMILESSyntaxError, KekulizationFailure, ValenceError
+from .exceptions import Error, SMILESSyntaxError, KekulizationError, ValenceError

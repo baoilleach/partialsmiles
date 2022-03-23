@@ -171,7 +171,7 @@ class SmilesParser:
             self.incompleteAtoms.update(x for x in self.prev if x is not None)
 
         self.handleError(ValenceError, self.validateValence())
-        self.handleError(KekulizationFailure, self.validateKekulization())
+        self.handleError(KekulizationError, self.validateKekulization())
         self.mol.openbonds = dict(self.openbonds)
         return self.mol
 
