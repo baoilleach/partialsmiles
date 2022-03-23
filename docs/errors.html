@@ -130,7 +130,7 @@ may mask errors in your own code.</p>
 <span class="kn">import</span> <span class="nn">partialsmiles</span> <span class="k">as</span> <span class="nn">ps</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">ps</span><span class="o">.</span><span class="n">ParseSmiles</span><span class="p">(</span><span class="s2">&quot;C(C)(C)(C)(C)C&quot;</span><span class="p">,</span> <span class="n">partial</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ps</span><span class="o">.</span><span class="n">ParseSmiles</span><span class="p">(</span><span class="s2">&quot;c1cc[nH]cc1&quot;</span><span class="p">,</span> <span class="n">partial</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ps</span><span class="o">.</span><span class="n">KekulizationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">e</span><span class="p">),</span> <span class="n">file</span><span class="o">=</span><span class="n">sys</span><span class="o">.</span><span class="n">stderr</span><span class="p">)</span>
     <span class="c1"># KekulizationError(&#39;Aromatic system cannot be kekulized&#39;, &#39;c1cc[nH]cc1&#39;, 3)</span>
