@@ -116,8 +116,8 @@ Kekulization errors can be caught as follows. Note that the indicated location o
         import partialsmiles as ps
 
         try:
-            ps.ParseSmiles("C(C)(C)(C)(C)C", partial=False)
-        except ps.KekulizationError as e:
+            ps.ParseSmiles("c1cc[nH]cc1", partial=False)
+        except ps.KekulizationFailure as e:
             print(repr(e), file=sys.stderr)
             # KekulizationFailure('Aromatic system cannot be kekulized', 'c1cc[nH]cc1', 3)
             print(str(e), file=sys.stderr)
