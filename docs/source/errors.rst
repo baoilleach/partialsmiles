@@ -9,7 +9,7 @@ attempts to warn about these errors at the earliest opportunity.
 1. Syntax errors
 2. Valence errors - a type of semantic error, where an atom's valence is not
    on a list of allowed valences
-3. Kekulization errors - another semantic error, where an aromatic system
+3. Kekulization failures - another semantic error, where an aromatic system
    cannot be kekulized
 
 Note that detection of stereochemistry-related errors is not currently supported.
@@ -103,14 +103,14 @@ Valence errors can be caught as follows::
             #   C(C)(C)(C)(C)C
             #   ^
 
-Kekulization errors
--------------------
+Kekulization failures
+---------------------
 
-A kekulization error is raised if an alternating pattern of single and double bonds cannot be found to cover an aromatic system (some details omitted). By definition, it is not possible to check for an error until the entire aromatic system is read (i.e. all connected lowercase atoms in the aromatic system). This means that all atoms connected to the system also need to be resolved as the parser can't know whether these will turn out to be aromatic.
+A kekulization failure is identified if an alternating pattern of single and double bonds cannot be found to cover an aromatic system (some details omitted). By definition, it is not possible to check for this as an error until the entire aromatic system is read (i.e. all connected lowercase atoms in the aromatic system). This means that all atoms connected to the system also need to be resolved as the parser can't know whether these will turn out to be aromatic.
 
 For example, we cannot attempt to kekulize the aromatic system in the partial SMILES string ``c1ccccc1`` as any additional character may affect the kekulization; once this is provided, e.g. ``c1ccccc1C``, we can try to kekulize it. Similarly, for ``c1ccc2cc1C`` we cannot attempt to kekulize until the identity of the atom at the other end of the bond closure "2" is known.
 
-Kekulization errors can be caught as follows. Note that the indicated location of the error may be any atom in the problematic aromatic system::
+Kekulization failures can be caught as follows. Note that the indicated location of the error may be any atom in the problematic aromatic system::
 
         import sys
         import partialsmiles as ps
