@@ -18,6 +18,7 @@ def ToBondOrder(bondchar):
     return bondorders[idx] # returns 1 for empty string
 
 class Bond:
+    __slots__ = ('beg', 'end', 'order', 'arom', 'idx')
     def __init__(self, beg, end, order):
         self.beg = beg
         self.end = end
@@ -29,6 +30,7 @@ class Bond:
         return self.beg if self.end==atom else self.end
 
 class Atom:
+    __slots__ = ('element', 'charge', 'implh', 'arom', 'idx', 'bonds', 'isotope')
     def __init__(self, element, charge=0):
         self.element = element
         self.charge = charge
@@ -48,6 +50,7 @@ class Atom:
         return sum(bond.order for bond in self.bonds)
 
 class Molecule:
+    __slots__ = ('atoms', 'bonds', 'openbonds')
     def __init__(self):
         self.atoms = []
         self.bonds = []
@@ -97,6 +100,8 @@ class State:
         self.bondchar = None
         self.parsing_atom = False
 
+ATOM_CHARS = set("CcONon[BPSFIbps*")
+
 class SmilesParser:
 
     def __init__(self, partial, rulesToIgnore):
@@ -130,21 +135,8 @@ class SmilesParser:
 
     def parse_token(self, state):
         x = self.smi[state.idx]
-        if x in "CcONon[BPSFIbps*":
+        if x in ATOM_CHARS:
             self.handleError(SMILESSyntaxError, self.parseAtom(state), state.idx)
-        elif x in '.>':
-            self.handleComponent(state)
-
-            state.prev[-1] = None
-            if x == '.':
-                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
-                state.idx += 1
-            elif x == '>':
-                state.reaction_part += 1
-                if state.reaction_part == 3:
-                    self.handleError(SMILESSyntaxError, "Reactions only have three parts", state.idx)
-                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
-                state.idx += 1
         elif x == ')':
             if not self.rulesToIgnore & 2 and (state.idx > 1 and self.smi[state.idx-1]=='('):
                 self.handleError(SMILESSyntaxError, "Empty branches are not allowed", state.idx)
@@ -182,6 +174,19 @@ class SmilesParser:
                 if "(" in precedingtext:
                     self.handleError(SMILESSyntaxError, "Ring closure symbols should not be in parentheses", state.idx)
             self.handleError(SMILESSyntaxError, self.handleBCSymbol(state), state.idx)
+        elif x in '.>':
+            self.handleComponent(state)
+
+            state.prev[-1] = None
+            if x == '.':
+                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
+                state.idx += 1
+            elif x == '>':
+                state.reaction_part += 1
+                if state.reaction_part == 3:
+                    self.handleError(SMILESSyntaxError, "Reactions only have three parts", state.idx)
+                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
+                state.idx += 1
         else:
             self.handleError(SMILESSyntaxError, "Illegal character", state.idx)
 
