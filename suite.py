@@ -19,9 +19,10 @@ class ValenceTests(unittest.TestCase):
                 ]
         for smi, val in data:
             sp = SmilesParser(True, 0)
+            sp._store_state = True
             mol = sp.parse(smi)
             atom = mol.atoms[0]
-            self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), val)
         data = [
                 ("C(", 2),
                 ("C(C)(", 3),
@@ -29,24 +30,27 @@ class ValenceTests(unittest.TestCase):
                 ]
         for smi, val in data:
             sp = SmilesParser(True, 0)
+            sp._store_state = True
             mol = sp.parse(smi)
             atom = mol.atoms[0]
-            self.assertEqual(sp.getAdjustedExplicitValence(atom), val)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), val)
 
     def testBranched(self):
         smi = "C(C(C)("
         val = [2, 4, 1]
         sp = SmilesParser(True, 0)
+        sp._store_state = True
         mol = sp.parse(smi)
         for v, atom in zip(val, mol.atoms):
-            self.assertEqual(sp.getAdjustedExplicitValence(atom), v)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), v)
 
         smi = "C(C(C)"
         val = [2, 3, 1]
         sp = SmilesParser(True, 0)
+        sp._store_state = True
         mol = sp.parse(smi)
         for v, atom in zip(val, mol.atoms):
-            self.assertEqual(sp.getAdjustedExplicitValence(atom), v)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), v)
 
     def testParser(self):
         smis = ["C(C)(C)(C)(C)C", "[N+5]"]
@@ -274,11 +278,6 @@ class KekulizationTests(unittest.TestCase):
 
     def testBasic(self):
         mol = ParseSmiles("c1ccccc1", False) # Will be kekulized
-        bondorders = [bond.order for bond in mol.bonds]
-        self.assertEqual(sum(x==1 for x in bondorders), 3)
-        self.assertEqual(sum(x==2 for x in bondorders), 3)
-
-        mol = ParseSmiles("c1ccccc1 ", False) # Will be kekulized
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 3)
         self.assertEqual(sum(x==2 for x in bondorders), 3)

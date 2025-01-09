@@ -1,4 +1,5 @@
 import sys
+import copy
 from .elements import elements
 from . import valence
 from . import kekulize
@@ -82,15 +83,10 @@ class Molecule:
     def __repr__(self):
         return "Molecule(atoms={})".format([str(x) for x in self.atoms])
 
-class SmilesParser:
-
-    def __init__(self, partial, rulesToIgnore):
-        self.partial = partial
-        self.rulesToIgnore = rulesToIgnore
-
-    def parse(self, smi):
-        self.smi = smi
-        self.N = len(smi)
+class State:
+    """The state of it"""
+    __slots__ = ('mol', 'openbonds', 'hcount', 'idx', 'prev', 'smiidx', 'reaction_part', 'bondchar', 'parsing_atom')
+    def __init__(self):
         self.mol = Molecule()
         self.openbonds = {} # dict from symbol -> (atom idx, bondchar)
         self.hcount = []
@@ -100,105 +96,117 @@ class SmilesParser:
         self.reaction_part = 0
         self.bondchar = None
         self.parsing_atom = False
-        while self.idx < self.N:
-            x = smi[self.idx]
-            if x in "CcONon[BPSFIbps*":
-                self.handleError(SMILESSyntaxError, self.parseAtom())
-            elif x in '. \t>':
-                self.handleComponent()
 
-                self.prev[-1] = None
-                if x == '.':
-                    self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
-                    self.idx += 1
-                elif x == '>':
-                    self.reaction_part += 1
-                    if self.reaction_part == 3:
-                        self.handleError(SMILESSyntaxError, "Reactions only have three parts")
-                    self.handleError(SMILESSyntaxError, self.validateSyntax(dot=True))
-                    self.idx += 1
-                else: # regard whitespace as the stop token
-                    self.partial = False
-                    break
-            elif x == ')':
-                if not self.rulesToIgnore & 2 and (self.idx > 1 and smi[self.idx-1]=='('):
-                    self.handleError(SMILESSyntaxError, "Empty branches are not allowed")
-                if not self.rulesToIgnore & 4 and self.idx > 1 and smi[self.idx-1]==')':
-                    self.handleError(SMILESSyntaxError, ("The final branch should not be within parentheses", self.idx-1))
-                if self.bondchar:
-                    self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
-                self.prev.pop()
-                if not self.prev:
-                    self.handleError(SMILESSyntaxError, "Unmatched close parenthesis")
-                self.idx += 1
-            elif x == '(':
-                if self.prev[-1] is None or smi[self.idx-1]=='(':
-                    self.handleError(SMILESSyntaxError, "An atom must precede an open parenthesis")
-                if self.bondchar:
-                    self.handleError(SMILESSyntaxError, "A bond symbol should not precede an open parenthesis")
-                self.prev.append(self.prev[-1])
-                self.idx += 1
-            elif x in bondchars:
-                if self.prev[-1] is None:
-                    self.handleError(SMILESSyntaxError, "An atom must precede a bond symbol")
-                if self.bondchar:
-                    self.handleError(SMILESSyntaxError, "Only a single bond symbol should be used")
-                if not self.rulesToIgnore & 64 and x == ':':
-                    self.handleError(SMILESSyntaxError, "Aromatic bond symbols are rejected by default")
-                self.bondchar = x
-                self.idx += 1
-            elif x.isdigit() or x=='%':
-                if self.prev[-1] is None:
-                    self.handleError(SMILESSyntaxError, "An atom must precede a bond closure symbol")
-                if not self.rulesToIgnore & 32:
-                    precedingtext = self.smi[self.smiidx[self.prev[-1].idx]+1:self.idx]
-                    if ")" in precedingtext:
-                        self.handleError(SMILESSyntaxError, "Ring closure symbols must immediately follow an atom")
-                    if "(" in precedingtext:
-                        self.handleError(SMILESSyntaxError, "Ring closure symbols should not be in parentheses")
-                self.handleError(SMILESSyntaxError, self.handleBCSymbol())
-            else:
-                self.handleError(SMILESSyntaxError, "Illegal character")
+class SmilesParser:
+
+    def __init__(self, partial, rulesToIgnore):
+        self.partial = partial
+        self.rulesToIgnore = rulesToIgnore
+
+    def parse(self, smi):
+        self.smi = smi
+        self.N = len(smi)
+        state = State()
+        if getattr(self, "_store_state", False):
+            self.state = state # used for testing
+
+        while state.idx < self.N:
+            self.parse_token(state)
 
         if not self.partial:
-            self.handleComponent()
+            self.handleComponent(state)
 
-        self.handleError(SMILESSyntaxError, self.validateSyntax())
+        self.handleError(SMILESSyntaxError, self.validateSyntax(state), state.idx)
 
-        self.setImplicitHydrogenCount()
-        self.incompleteAtoms = set(x[0] for x in self.openbonds.values())
+        self.setImplicitHydrogenCount(state)
+        self.incompleteAtoms = set(x[0] for x in state.openbonds.values())
         if self.partial:
-            self.incompleteAtoms.update(x for x in self.prev if x is not None)
+            self.incompleteAtoms.update(x for x in state.prev if x is not None)
 
-        self.handleError(ValenceError, self.validateValence())
-        self.handleError(KekulizationFailure, self.validateKekulization())
-        self.mol.openbonds = dict(self.openbonds)
-        return self.mol
+        self.handleError(ValenceError, self.validateValence(state), state.idx)
+        self.handleError(KekulizationFailure, self.validateKekulization(state.mol, state), state.idx)
+        state.mol.openbonds = dict(state.openbonds)
+        return state.mol
 
-    def handleError(self, errtype, msg):
+    def parse_token(self, state):
+        x = self.smi[state.idx]
+        if x in "CcONon[BPSFIbps*":
+            self.handleError(SMILESSyntaxError, self.parseAtom(state), state.idx)
+        elif x in '.>':
+            self.handleComponent(state)
+
+            state.prev[-1] = None
+            if x == '.':
+                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
+                state.idx += 1
+            elif x == '>':
+                state.reaction_part += 1
+                if state.reaction_part == 3:
+                    self.handleError(SMILESSyntaxError, "Reactions only have three parts", state.idx)
+                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
+                state.idx += 1
+        elif x == ')':
+            if not self.rulesToIgnore & 2 and (state.idx > 1 and self.smi[state.idx-1]=='('):
+                self.handleError(SMILESSyntaxError, "Empty branches are not allowed", state.idx)
+            if not self.rulesToIgnore & 4 and state.idx > 1 and self.smi[state.idx-1]==')':
+                self.handleError(SMILESSyntaxError, "The final branch should not be within parentheses", state.idx-1)
+            if state.bondchar:
+                self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol", state.idx)
+            state.prev.pop()
+            if not state.prev:
+                self.handleError(SMILESSyntaxError, "Unmatched close parenthesis", state.idx)
+            state.idx += 1
+        elif x == '(':
+            if state.prev[-1] is None or self.smi[state.idx-1]=='(':
+                self.handleError(SMILESSyntaxError, "An atom must precede an open parenthesis", state.idx)
+            if state.bondchar:
+                self.handleError(SMILESSyntaxError, "A bond symbol should not precede an open parenthesis", state.idx)
+            state.prev.append(state.prev[-1])
+            state.idx += 1
+        elif x in bondchars:
+            if state.prev[-1] is None:
+                self.handleError(SMILESSyntaxError, "An atom must precede a bond symbol", state.idx)
+            if state.bondchar:
+                self.handleError(SMILESSyntaxError, "Only a single bond symbol should be used", state.idx)
+            if not self.rulesToIgnore & 64 and x == ':':
+                self.handleError(SMILESSyntaxError, "Aromatic bond symbols are rejected by default", state.idx)
+            state.bondchar = x
+            state.idx += 1
+        elif x.isdigit() or x=='%':
+            if state.prev[-1] is None:
+                self.handleError(SMILESSyntaxError, "An atom must precede a bond closure symbol", state.idx)
+            if not self.rulesToIgnore & 32:
+                precedingtext = self.smi[state.smiidx[state.prev[-1].idx]+1:state.idx]
+                if ")" in precedingtext:
+                    self.handleError(SMILESSyntaxError, "Ring closure symbols must immediately follow an atom", state.idx)
+                if "(" in precedingtext:
+                    self.handleError(SMILESSyntaxError, "Ring closure symbols should not be in parentheses", state.idx)
+            self.handleError(SMILESSyntaxError, self.handleBCSymbol(state), state.idx)
+        else:
+            self.handleError(SMILESSyntaxError, "Illegal character", state.idx)
+
+    def handleError(self, errtype, msg, idx):
+        """Do nothing if no error msg supplied, otherwise raise an Exception"""
         if msg:
-            if type(msg) == type(()):
-                raise errtype(msg[0], self.smi, msg[1])
-            else:
-                raise errtype(msg, self.smi, self.idx)
+            raise errtype(msg, self.smi, idx)
 
-    def handleComponent(self):
+    def handleComponent(self, state):
         # Check some conditions at the end of parsing a component
         if not self.rulesToIgnore & 1:
-            if self.idx == 0 or self.smi[self.idx-1] in "." or (self.smi[self.idx-1] == '>' and self.reaction_part == 2):
-                self.handleError(SMILESSyntaxError, "Empty molecules are not allowed")
-        if self.bondchar:
-            self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol")
-        if not self.rulesToIgnore & 4 and self.idx > 1 and self.smi[self.idx-1]==')':
-            self.handleError(SMILESSyntaxError, ("The final branch should not be within parentheses", self.idx-1))
+            if state.idx == 0 or self.smi[state.idx-1] in "." or (self.smi[state.idx-1] == '>' and state.reaction_part == 2):
+                self.handleError(SMILESSyntaxError, "Empty molecules are not allowed", state.idx)
+        if state.bondchar:
+            self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol", state.idx)
+        if not self.rulesToIgnore & 4 and state.idx > 1 and self.smi[state.idx-1]==')':
+            self.handleError(SMILESSyntaxError, "The final branch should not be within parentheses", state.idx-1)
 
-    def validateValence(self):
+    def validateValence(self, state):
         # ----- Check for unusual valence -------
-        for atom in self.mol.atoms:
-            if not self.hasCommonValence(atom):
-                return ("Uncommon valence or charge state", self.smiidx[atom.idx])
+        for atom in state.mol.atoms:
+            if not self.hasCommonValence(atom, state):
+                return ("Uncommon valence or charge state", state.smiidx[atom.idx])
 
-    def validateKekulization(self):
+    def validateKekulization(self, mol, state):
         # Try to kekulize all aromatic ring systems that are 'complete'
         # i.e. where no member has an unclosed ring opening or
         #      is the current atom being added to by the parser
@@ -213,11 +221,11 @@ class SmilesParser:
         incompleteAromaticAtoms = set(x for x in self.incompleteAtoms if x.arom)
 
         # Find aromatic systems (networks of aromatic bonds)
-        seen = [0]*len(self.mol.atoms)
-        bond_marker = [0]*len(self.mol.bonds)
+        seen = [0]*len(mol.atoms)
+        bond_marker = [0]*len(mol.bonds)
         arom_system = 0
         incomplete_systems = set()
-        for atom in self.mol.atoms:
+        for atom in mol.atoms:
             if seen[atom.idx] or not any(bond.arom for bond in atom.bonds): continue
             arom_system += 1
             stack = [atom]
@@ -235,86 +243,86 @@ class SmilesParser:
                             stack.append(nbr)
 
         # Strip aromaticity
-        for idx, bond in enumerate(self.mol.bonds):
+        for idx, bond in enumerate(mol.bonds):
             if bond_marker[idx] in incomplete_systems:
                 bond.arom = False
 
         # Kekulize
-        result = kekulize.Kekulize(self.mol)
+        result = kekulize.Kekulize(mol)
         if result is not None:
-            return ("Aromatic system cannot be kekulized", self.smiidx[result])
+            return ("Aromatic system cannot be kekulized", state.smiidx[result])
 
         # Reset aromaticity
         if True: # set To False for a minor speed-up if you are not reusing
                   # the molecule afterwards.
-            for idx, bond in enumerate(self.mol.bonds):
+            for idx, bond in enumerate(mol.bonds):
                 if bond_marker[idx] in incomplete_systems:
                     bond.arom = True
 
         return None
 
-    def validateSyntax(self, dot=False):
+    def validateSyntax(self, state, dot=False):
         # ----- Check syntax -------
         # Check that all ring bonds have been closed
         # Check that all brackets have been closed
         if self.partial and not dot:
             return None
-        if (not dot or not self.rulesToIgnore & 16) and self.openbonds:
-            text = "s have" if len(self.openbonds) > 1 else " has"
-            return "{} ring opening{} not been closed".format(len(self.openbonds), text)
-        if not self.rulesToIgnore & 8 and len(self.prev) > 1:
-            text = "branches have" if len(self.prev) > 2 else "branch has"
-            return "{} {} not been closed".format(len(self.prev)-1, text)
+        if (not dot or not self.rulesToIgnore & 16) and state.openbonds:
+            text = "s have" if len(state.openbonds) > 1 else " has"
+            return "{} ring opening{} not been closed".format(len(state.openbonds), text)
+        if not self.rulesToIgnore & 8 and len(state.prev) > 1:
+            text = "branches have" if len(state.prev) > 2 else "branch has"
+            return "{} {} not been closed".format(len(state.prev)-1, text)
         return None
 
-    def setImplicitHydrogenCount(self):
-        for i, atom in enumerate(self.mol.atoms):
-            hcount = self.hcount[i]
+    def setImplicitHydrogenCount(self, state):
+        for i, atom in enumerate(state.mol.atoms):
+            hcount = state.hcount[i]
             if hcount > -1:
                 atom.implh = hcount
             else:
-                explicitvalence = self.getAdjustedExplicitValence(atom)
+                explicitvalence = self.getAdjustedExplicitValence(atom, state)
                 implicitvalence = SmilesValence(atom.element, explicitvalence)
                 implh = implicitvalence - explicitvalence
                 if implh > 0 and (atom.arom or any(bond.arom for bond in atom.bonds)):
                     implh -= 1
                 atom.implh = implh
 
-    def handleBCSymbol(self):
-        x = self.smi[self.idx]
+    def handleBCSymbol(self, state):
+        x = self.smi[state.idx]
         if x == "%":
-            bcsymbol = self.smi[self.idx:self.idx+3]
-            self.idx += 2
+            bcsymbol = self.smi[state.idx:state.idx+3]
+            state.idx += 2
         else:
             bcsymbol = x
-        if bcsymbol in self.openbonds:
-            opening, openbc = self.openbonds.pop(bcsymbol)
-            if opening == self.prev[-1]:
+        if bcsymbol in state.openbonds:
+            opening, openbc = state.openbonds.pop(bcsymbol)
+            if opening == state.prev[-1]:
                 return "Cannot have a bond opening and closing on the same atom"
-            if self.mol.getBond(opening, self.prev[-1]):
+            if state.mol.getBond(opening, state.prev[-1]):
                 return "Cannot have a second bond between the same atoms"
             openbo = 0 if not openbc else ToBondOrder(openbc)
-            closebo = 0 if not self.bondchar else ToBondOrder(self.bondchar)
+            closebo = 0 if not state.bondchar else ToBondOrder(state.bondchar)
             if closebo and openbo and closebo != openbo:
                 return "Inconsistent bond orders"
             bo = closebo if closebo else openbo
-            if self.bondchar == ':':
+            if state.bondchar == ':':
                 arom = True
             else:
                 arom = False
                 if not bo:
-                    if opening.arom and self.prev[-1].arom:
+                    if opening.arom and state.prev[-1].arom:
                         arom = True
                     bo = 1
-            bond = self.mol.addBond(opening, self.prev[-1], bo)
+            bond = state.mol.addBond(opening, state.prev[-1], bo)
             bond.arom = arom
         else:
-            self.openbonds[bcsymbol] = (self.prev[-1], self.bondchar)
-        self.idx += 1
-        self.bondchar = None
+            state.openbonds[bcsymbol] = (state.prev[-1], state.bondchar)
+        state.idx += 1
+        state.bondchar = None
         return None
 
-    def getAdjustedExplicitValence(self, atom):
+    def getAdjustedExplicitValence(self, atom, state):
         """Adjust the explicit valence for the attachee in partial SMILES
         
         For example: "C(" has explicit valence of 0, but adjusted to 2
@@ -326,25 +334,25 @@ class SmilesParser:
         ans = atom.getExplicitValence()
         if not self.partial:
             return ans
-        if atom == self.prev[-1]:
-            if self.bondchar:
-                ans += ToBondOrder(self.bondchar)
-            elif self.parsing_atom or self.smi[-1] == '(' or (self.openbonds and len(self.prev) == 1 and self.smi[-1] != ')'):
+        if atom == state.prev[-1]:
+            if state.bondchar:
+                ans += ToBondOrder(state.bondchar)
+            elif state.parsing_atom or self.smi[-1] == '(' or (state.openbonds and len(state.prev) == 1 and self.smi[-1] != ')'):
                 ans += 1
             if not self.rulesToIgnore & 4:
-                if len(self.prev) > 1 and self.prev[-1] == self.prev[-2]:
+                if len(state.prev) > 1 and state.prev[-1] == state.prev[-2]:
                     ans += 1 # just opened a new branch
                 if self.smi[-1] == ')':
                     ans += 1 # just closed a branch, but there must be another branch
-        elif atom in self.prev:
+        elif atom in state.prev:
             if not self.rulesToIgnore & 4:
                 ans += 1
-        for bcsymbol, (beg, symbol) in self.openbonds.items():
+        for bcsymbol, (beg, symbol) in state.openbonds.items():
             if beg == atom:
                 ans += 1 if not symbol else ToBondOrder(symbol)
         return ans
 
-    def hasCommonValence(self, atom):
+    def hasCommonValence(self, atom, state):
         data = valence.common_valencies.get(atom.element, None)
 
         # How to handle elements not in the list?
@@ -357,7 +365,7 @@ class SmilesParser:
         if allowed is None:
             return False # unusual charge state
 
-        explval = self.getAdjustedExplicitValence(atom)
+        explval = self.getAdjustedExplicitValence(atom, state)
         # adjust valence for aromatic atoms (erring on the side of caution for incompleteAtoms)
         if valence.NeedsDblBond(atom) and not (self.partial and atom in self.incompleteAtoms):
             explval += 1
@@ -376,83 +384,83 @@ class SmilesParser:
             return True
         return False
 
-    def notAtEnd(self):
-        return self.idx < self.N
+    def notAtEnd(self, state):
+        return state.idx < self.N
 
-    def atEnd(self):
-        return self.idx == self.N
+    def atEnd(self, state):
+        return state.idx == self.N
 
-    def incrementAndTestForEnd(self):
-        self.idx += 1
-        if self.atEnd():
+    def incrementAndTestForEnd(self, state):
+        state.idx += 1
+        if self.atEnd(state):
             if self.partial:
                 return True, None
             else:
                 return True, "An open square brackets is present without the corresponding close square brackets"
         return False, None
 
-    def parseAtom(self):
-        x = self.smi[self.idx]
-        self.parsing_atom = True
+    def parseAtom(self, state):
+        x = self.smi[state.idx]
+        state.parsing_atom = True
 
         if x == '[':
-            end, msg = self.incrementAndTestForEnd()
+            end, msg = self.incrementAndTestForEnd(state)
             if end:
                 return msg
 
             # Handle isotope
-            if self.smi[self.idx].isdigit():
-                isotope = int(self.smi[self.idx])
+            if self.smi[state.idx].isdigit():
+                isotope = int(self.smi[state.idx])
                 if isotope == 0:
                     return "Isotope value of 0 not allowed"
-                end, msg = self.incrementAndTestForEnd()
+                end, msg = self.incrementAndTestForEnd(state)
                 if end:
                     return msg
-                if self.smi[self.idx].isdigit():
-                    isotope = isotope*10 + int(self.smi[self.idx])
-                    end, msg = self.incrementAndTestForEnd()
+                if self.smi[state.idx].isdigit():
+                    isotope = isotope*10 + int(self.smi[state.idx])
+                    end, msg = self.incrementAndTestForEnd(state)
                     if end:
                         return msg
-                    if self.smi[self.idx].isdigit():
-                        isotope = isotope*10 + int(self.smi[self.idx])
-                        end, msg = self.incrementAndTestForEnd()
+                    if self.smi[state.idx].isdigit():
+                        isotope = isotope*10 + int(self.smi[state.idx])
+                        end, msg = self.incrementAndTestForEnd(state)
                         if end:
                             return msg
             else:
                 isotope = 0
 
             # Handle element
-            if self.smi[self.idx] not in firstLetterOfElements:
+            if self.smi[state.idx] not in firstLetterOfElements:
                 return "An element symbol is required"
-            if self.idx+1 < self.N and self.smi[self.idx].upper() + self.smi[self.idx+1] in elements:
-                symbol = self.smi[self.idx:self.idx+2]
-                self.idx += 1
+            if state.idx+1 < self.N and self.smi[state.idx].upper() + self.smi[state.idx+1] in elements:
+                symbol = self.smi[state.idx:state.idx+2]
+                state.idx += 1
             else:
-                symbol = self.smi[self.idx]
+                symbol = self.smi[state.idx]
                 if symbol.upper() not in elements:
                     return "An element symbol is required"
-            end, msg = self.incrementAndTestForEnd()
+            end, msg = self.incrementAndTestForEnd(state)
             if end:
                 return msg
 
             # Handle tet stereo
-            if self.smi[self.idx] == '@':
-                end, msg = self.incrementAndTestForEnd()
+            if self.smi[state.idx] == '@':
+                end, msg = self.incrementAndTestForEnd(state)
                 if end:
                     return msg
-                if self.smi[self.idx] == '@':
-                    end, msg = self.incrementAndTestForEnd()
+                if self.smi[state.idx] == '@':
+                    end, msg = self.incrementAndTestForEnd(state)
                     if end:
                         return msg
 
             # Handle H count
-            if self.smi[self.idx] == 'H':
-                end, msg = self.incrementAndTestForEnd()
+            if self.smi[state.idx] == 'H':
+                end, msg = self.incrementAndTestForEnd(state)
                 if end:
                     return msg
-                if self.smi[self.idx].isdigit():
-                    hcount = int(self.smi[self.idx])
-                    end, msg = self.incrementAndTestForEnd()
+                if self.smi[state.idx].isdigit():
+                    hcount = int(self.smi[state.idx])
+                    end, msg = self.incrementAndTestForEnd(state)
                     if end:
                         return msg
                 else:
@@ -461,22 +469,22 @@ class SmilesParser:
                 hcount = 0
 
             # Handle charge
-            if self.smi[self.idx] in "+-":
-                charge = 1 if self.smi[self.idx] == '+' else -1
-                end, msg = self.incrementAndTestForEnd()
+            if self.smi[state.idx] in "+-":
+                charge = 1 if self.smi[state.idx] == '+' else -1
+                end, msg = self.incrementAndTestForEnd(state)
                 if end:
                     return msg
-                if self.smi[self.idx].isdigit():
-                    numcharge = int(self.smi[self.idx])
+                if self.smi[state.idx].isdigit():
+                    numcharge = int(self.smi[state.idx])
                     charge *= numcharge
-                    end, msg = self.incrementAndTestForEnd()
+                    end, msg = self.incrementAndTestForEnd(state)
                     if end:
                         return msg
-                elif self.smi[self.idx] in "+-":
+                elif self.smi[state.idx] in "+-":
                     numcharge = 1
-                    while self.smi[self.idx] == self.smi[self.idx-1]:
+                    while self.smi[state.idx] == self.smi[state.idx-1]:
                         numcharge += 1
-                        end, msg = self.incrementAndTestForEnd()
+                        end, msg = self.incrementAndTestForEnd(state)
                         if end:
                             return msg
                     charge *= numcharge
@@ -484,34 +492,34 @@ class SmilesParser:
                 charge = 0
 
             # Handle close-bracket
-            if self.smi[self.idx] == ']':
-                self.idx += 1
+            if self.smi[state.idx] == ']':
+                state.idx += 1
             else:
                 return "Missing the close bracket"
 
-        elif self.notAtEnd() and self.smi[self.idx:self.idx+2] in ["Cl", "Br"]:
-            symbol = self.smi[self.idx:self.idx+2]
-            self.idx += 2
+        elif self.notAtEnd(state) and self.smi[state.idx:state.idx+2] in ["Cl", "Br"]:
+            symbol = self.smi[state.idx:state.idx+2]
+            state.idx += 2
             hcount = -1
             charge = 0
             isotope = 0
         else:
-            self.idx += 1
+            state.idx += 1
             symbol = x
             hcount = -1
             charge = 0
             isotope = 0
 
-        atom = self.mol.addAtom(symbol, self.prev[-1], self.bondchar if self.bondchar else "")
+        atom = state.mol.addAtom(symbol, state.prev[-1], state.bondchar if state.bondchar else "")
         atom.charge = charge
         atom.isotope = isotope
-        self.prev[-1] = atom
-        self.hcount.append(hcount)
-        self.smiidx.append(self.idx-1)
+        state.prev[-1] = atom
+        state.hcount.append(hcount)
+        state.smiidx.append(state.idx-1)
 
         # Reset
-        self.bondchar = None
-        self.parsing_atom = False
+        state.bondchar = None
+        state.parsing_atom = False
 
 valencemodel = {
         5: [3], 6: [4], 7: [3, 5], 15: [3, 5],
