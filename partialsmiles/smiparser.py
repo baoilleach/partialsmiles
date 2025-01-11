@@ -5,7 +5,9 @@ from . import valence
 from . import kekulize
 from .exceptions import *
 
-bondchars = "-=#$\\/:"
+atomchars = set("CcONon[BPSFIbps*")
+bondchars_list = "-=#$\\/:"
+bondchars = set(bondchars_list)
 bondorders = [1, 2, 3, 4, 1, 1, 1]
 CLOSE, OPEN = range(2)
 
@@ -14,7 +16,7 @@ aromatic_set = set(aromatic_list)
 firstLetterOfElements = set(x[0] for x in list(elements.keys()) + aromatic_list)
 
 def ToBondOrder(bondchar):
-    idx = bondchars.index(bondchar)
+    idx = bondchars_list.index(bondchar)
     return bondorders[idx] # returns 1 for empty string
 
 class Bond:
@@ -100,7 +102,6 @@ class State:
         self.bondchar = None
         self.parsing_atom = False
 
-ATOM_CHARS = set("CcONon[BPSFIbps*")
 
 class SmilesParser:
 
@@ -135,7 +136,7 @@ class SmilesParser:
 
     def parse_token(self, state):
         x = self.smi[state.idx]
-        if x in ATOM_CHARS:
+        if x in atomchars:
             self.handleError(SMILESSyntaxError, self.parseAtom(state), state.idx)
         elif x == ')':
             if not self.rulesToIgnore & 2 and (state.idx > 1 and self.smi[state.idx-1]=='('):
