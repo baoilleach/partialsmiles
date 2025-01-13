@@ -180,9 +180,10 @@ class Cache:
         self.state = None
         self.smi = ""
     def store(self, state, smi):
-        self.state = CopyState(state)
-        self.state.from_cache = True
-        self.smi = smi
+        if smi != self.smi:
+            self.state = CopyState(state)
+            self.state.from_cache = True
+            self.smi = smi
     def get(self, smi, use_cache=True):
         if use_cache and self.smi and smi.startswith(self.smi):
             return CopyState(self.state) # don't modify the cached version
@@ -207,7 +208,7 @@ class SmilesParser:
 
         state = self.cache.get(smi, use_cache=self.retrieve_from_cache)
         while state.idx < self.N:
-            if state.idx == cache_point:
+            if self.store_in_cache and state.idx == cache_point:
                 self.cache.store(state, smi[:state.idx])
             self.parse_token(state)
 
