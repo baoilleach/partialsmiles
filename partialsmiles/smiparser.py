@@ -19,6 +19,26 @@ def ToBondOrder(bondchar):
     idx = bondchars_list.index(bondchar)
     return bondorders[idx] # returns 1 for empty string
 
+def IndexOfLastToken(smi):
+    if not smi:
+        return -1
+    i = len(smi)-1
+    x = smi[i]
+    if x in "lr": # Cl, Br
+        return i-1
+    elif x.isalpha() or x=='*':
+        return i
+    elif x in '%()' or x in bondchars:
+        return i
+    elif smi[i] == ']':
+        i -= 1
+        while i >= 0 and smi[i] != '[':
+            i -= 1
+        return i # could be -1
+    elif x.isdigit():
+        return i if (i < 2 or smi[i-2] != '%') else i-2
+    return -1
+
 class Bond:
     __slots__ = ('beg', 'end', 'order', 'arom', 'idx')
     def __init__(self, beg, end, order):
@@ -52,7 +72,7 @@ class Atom:
         return sum(bond.order for bond in self.bonds)
 
 class Molecule:
-    __slots__ = ('atoms', 'bonds', 'openbonds')
+    __slots__ = ('atoms', 'bonds', 'state')
     def __init__(self):
         self.atoms = []
         self.bonds = []
@@ -89,9 +109,10 @@ class Molecule:
         return "Molecule(atoms={})".format([str(x) for x in self.atoms])
 
 class State:
-    """The state of it"""
-    __slots__ = ('mol', 'openbonds', 'hcount', 'idx', 'prev', 'smiidx', 'reaction_part', 'bondchar', 'parsing_atom')
+    __slots__ = ('mol', 'openbonds', 'hcount', 'idx', 'prev', 'smiidx', 'reaction_part', 'bondchar', 'parsing_atom', 'from_cache')
+
     def __init__(self):
+        """The state of it"""
         self.mol = Molecule()
         self.openbonds = {} # dict from symbol -> (atom idx, bondchar)
         self.hcount = []
@@ -101,22 +122,48 @@ class State:
         self.reaction_part = 0
         self.bondchar = None
         self.parsing_atom = False
+        self.from_cache = False # Used for testing
 
+    def __repr__(self):
+        """Look at the state of it"""
+        out = f"{self.mol}\n"
+        out += f"{self.openbonds=}\n{self.hcount=}\n{self.idx=}\n{self.prev=}\n{self.smiidx=}\n{self.reaction_part=}\n{self.bondchar=}\n{self.parsing_atom=}\n{self.from_cache=}"
+        return out
+
+class Cache:
+    def __init__(self):
+        self.state = None
+        self.smi = ""
+    def store(self, state, smi):
+        self.state = copy.deepcopy(state)
+        self.state.from_cache = True
+        self.smi = smi
+    def get(self, smi, use_cache=True):
+        if use_cache and self.smi and smi.startswith(self.smi):
+            return copy.deepcopy(self.state) # don't modify the cached version
+        else:
+            return State()
 
 class SmilesParser:
 
-    def __init__(self, partial, rulesToIgnore):
-        self.partial = partial
+    def __init__(self, rulesToIgnore=0):
         self.rulesToIgnore = rulesToIgnore
+        self.cache = Cache()
+        self.store_in_cache = True
+        self.retrieve_from_cache = True
 
-    def parse(self, smi):
+    def parse(self, smi, partial=False):
         self.smi = smi
+        self.partial = partial
         self.N = len(smi)
-        state = State()
-        if getattr(self, "_store_state", False):
-            self.state = state # used for testing
 
+        # We will cache the state just before parsing the last token
+        cache_point = IndexOfLastToken(smi)
+
+        state = self.cache.get(smi, use_cache=self.retrieve_from_cache)
         while state.idx < self.N:
+            if state.idx == cache_point:
+                self.cache.store(state, smi[:state.idx])
             self.parse_token(state)
 
         if not self.partial:
@@ -131,8 +178,8 @@ class SmilesParser:
 
         self.handleError(ValenceError, self.validateValence(state), state.idx)
         self.handleError(KekulizationFailure, self.validateKekulization(state.mol, state), state.idx)
-        state.mol.openbonds = dict(state.openbonds)
-        return state.mol
+
+        return state
 
     def parse_token(self, state):
         x = self.smi[state.idx]
@@ -549,7 +596,5 @@ def ToElement(symbol):
 
 ###################### PUBLIC API ########################
 
-def ParseSmiles(smi, partial=False, rulesToIgnore=0):
-    sp = SmilesParser(partial, rulesToIgnore);
-    mol = sp.parse(smi)
-    return mol
+# parser = SmilesParser()
+# parser.parse("CC", partial=True)

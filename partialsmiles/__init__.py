@@ -1,6 +1,6 @@
 # MIT License
 # 
-# Copyright (c) 2019 Noel O'Boyle
+# Copyright (c) 2019-2025 Noel O'Boyle
 # 
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -24,9 +24,9 @@
 
 __name__ = "partialsmiles"
 __author__ = "Noel M O'Boyle"
-__version__ = "1.0"
+__version__ = "2.0"
 __license__ = "MIT"
-__copyright__ = "Noel O'Boyle 2019"
+__copyright__ = "Noel O'Boyle 2025"
 
-from .smiparser import ParseSmiles
+from .smiparser import SmilesParser
 from .exceptions import Error, SMILESSyntaxError, KekulizationFailure, ValenceError
