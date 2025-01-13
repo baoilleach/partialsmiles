@@ -51,6 +51,9 @@ class Bond:
     def getNbr(self, atom):
         return self.beg if self.end==atom else self.end
 
+    def __repr__(self):
+        return "Bond(beg={},end={},idx={},order={},arom={}".format(self.beg, self.end, self.idx, self.order, self.arom)
+
 class Atom:
     __slots__ = ('element', 'charge', 'implh', 'arom', 'idx', 'bonds', 'isotope')
     def __init__(self, element, charge=0):
@@ -63,7 +66,7 @@ class Atom:
         self.isotope = 0
 
     def __repr__(self):
-        return "Atom(elem={},chg={},idx={})".format(self.element, self.charge, self.idx)
+        return "Atom(elem={},chg={},idx={},arom={})".format(self.element, self.charge, self.idx, self.arom)
 
     def getExplicitDegree(self):
         return len(self.bonds)
@@ -106,7 +109,49 @@ class Molecule:
         return None
 
     def __repr__(self):
-        return "Molecule(atoms={})".format([str(x) for x in self.atoms])
+        return "Molecule(atoms={},bonds={})".format([str(x) for x in self.atoms], [str(x) for x in self.bonds])
+
+def CopyState(state):
+    nstate = State()
+
+    nstate.hcount = list(state.hcount)
+    nstate.idx = state.idx
+    nstate.smiidx = list(state.smiidx)
+    nstate.reaction_part = state.reaction_part
+    nstate.bondchar = state.bondchar
+    nstate.parsing_atom = state.parsing_atom
+    nstate.from_cache = state.from_cache
+
+    # Handle mol
+    nmol = Molecule()
+    for atom in state.mol.atoms:
+        natom = Atom(atom.element, atom.charge)
+        natom.implh = atom.implh
+        natom.arom = atom.arom
+        natom.idx = atom.idx
+        natom.isotope = atom.isotope
+        nmol.atoms.append(natom)
+    for bond in state.mol.bonds:
+        begidx, endidx = bond.beg.idx, bond.end.idx
+        nbond = nmol.addBond(nmol.atoms[begidx], nmol.atoms[endidx], bond.order)
+        nbond.arom = bond.arom
+    nstate.mol = nmol
+
+    # Handle prev
+    nstate.prev = []
+    for atom in state.prev:
+        if atom is None:
+            natom = None
+        else:
+            natom = nmol.atoms[atom.idx]
+        nstate.prev.append(natom)
+
+    # Handle openbonds
+    nstate.openbonds = {}
+    for rc, (atom, bc) in state.openbonds.items():
+        nstate.openbonds[rc] = (nmol.atoms[atom.idx], bc)
+
+    return nstate
 
 class State:
     __slots__ = ('mol', 'openbonds', 'hcount', 'idx', 'prev', 'smiidx', 'reaction_part', 'bondchar', 'parsing_atom', 'from_cache')
@@ -135,12 +180,12 @@ class Cache:
         self.state = None
         self.smi = ""
     def store(self, state, smi):
-        self.state = copy.deepcopy(state)
+        self.state = CopyState(state)
         self.state.from_cache = True
         self.smi = smi
     def get(self, smi, use_cache=True):
         if use_cache and self.smi and smi.startswith(self.smi):
-            return copy.deepcopy(self.state) # don't modify the cached version
+            return CopyState(self.state) # don't modify the cached version
         else:
             return State()
 
