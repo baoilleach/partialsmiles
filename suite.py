@@ -358,6 +358,8 @@ class KekulizationTests(unittest.TestCase):
     
     def testCoverage(self):
         smis = [
+                # "c1cccn(=O)c1",    # pyridine N-oxide (we don't support 5-valent Ns by default)
+                "c1ccc[n+]([O-])c1", # pyridine N-oxide charge-separated
                 "Cs1(=O)ccccn1", # S-oxides
                 "c1c#cccc1", # benzyne
                 "n1cnc[n-]1", # from SMILES benchmark
