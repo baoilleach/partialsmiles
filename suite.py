@@ -339,6 +339,13 @@ class KekulizationTests(unittest.TestCase):
         for smi in smis:
             state = ParseSmiles(smi, partial=False)
 
+    def testErrorMessage(self):
+        smi = "c1cccc1"
+        try:
+            ParseSmiles(smi, partial=False)
+        except KekulizationFailure as e:
+            self.assertEqual(e.message, "Aromatic system cannot be kekulized")
+
 class AromaticBondTest(unittest.TestCase):
     
     def testBasic(self):

@@ -128,89 +128,89 @@ class SmilesParser:
         if not self.partial:
             self.handleComponent(state)
 
-        self.handleError(SMILESSyntaxError, self.validateSyntax(state), state.idx)
+        self.handleError(SMILESSyntaxError, (self.validateSyntax(state), state.idx))
 
         self.setImplicitHydrogenCount(state)
         self.incompleteAtoms = set(x[0] for x in state.openbonds.values())
         if self.partial:
             self.incompleteAtoms.update(x for x in state.prev if x is not None)
 
-        self.handleError(ValenceError, self.validateValence(state), state.idx)
-        self.handleError(KekulizationFailure, self.validateKekulization(state.mol, state), state.idx)
+        self.handleError(ValenceError, self.validateValence(state))
+        self.handleError(KekulizationFailure, self.validateKekulization(state.mol, state))
         
         return state
 
     def parse_token(self, state):
         x = self.smi[state.idx]
         if x in atomchars:
-            self.handleError(SMILESSyntaxError, self.parseAtom(state), state.idx)
+            self.handleError(SMILESSyntaxError, (self.parseAtom(state), state.idx))
         elif x == ')':
             if not self.rulesToIgnore & 2 and (state.idx > 1 and self.smi[state.idx-1]=='('):
-                self.handleError(SMILESSyntaxError, "Empty branches are not allowed", state.idx)
+                self.handleError(SMILESSyntaxError, ("Empty branches are not allowed", state.idx))
             if not self.rulesToIgnore & 4 and state.idx > 1 and self.smi[state.idx-1]==')':
-                self.handleError(SMILESSyntaxError, "The final branch should not be within parentheses", state.idx-1)
+                self.handleError(SMILESSyntaxError, ("The final branch should not be within parentheses", state.idx-1))
             if state.bondchar:
-                self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol", state.idx)
+                self.handleError(SMILESSyntaxError, ("An atom must follow a bond symbol", state.idx))
             state.prev.pop()
             if not state.prev:
-                self.handleError(SMILESSyntaxError, "Unmatched close parenthesis", state.idx)
+                self.handleError(SMILESSyntaxError, ("Unmatched close parenthesis", state.idx))
             state.idx += 1
         elif x == '(':
             if state.prev[-1] is None or self.smi[state.idx-1]=='(':
-                self.handleError(SMILESSyntaxError, "An atom must precede an open parenthesis", state.idx)
+                self.handleError(SMILESSyntaxError, ("An atom must precede an open parenthesis", state.idx))
             if state.bondchar:
-                self.handleError(SMILESSyntaxError, "A bond symbol should not precede an open parenthesis", state.idx)
+                self.handleError(SMILESSyntaxError, ("A bond symbol should not precede an open parenthesis", state.idx))
             state.prev.append(state.prev[-1])
             state.idx += 1
         elif x in bondchars:
             if state.prev[-1] is None:
-                self.handleError(SMILESSyntaxError, "An atom must precede a bond symbol", state.idx)
+                self.handleError(SMILESSyntaxError, ("An atom must precede a bond symbol", state.idx))
             if state.bondchar:
-                self.handleError(SMILESSyntaxError, "Only a single bond symbol should be used", state.idx)
+                self.handleError(SMILESSyntaxError, ("Only a single bond symbol should be used", state.idx))
             if not self.rulesToIgnore & 64 and x == ':':
-                self.handleError(SMILESSyntaxError, "Aromatic bond symbols are rejected by default", state.idx)
+                self.handleError(SMILESSyntaxError, ("Aromatic bond symbols are rejected by default", state.idx))
             state.bondchar = x
             state.idx += 1
         elif x.isdigit() or x=='%':
             if state.prev[-1] is None:
-                self.handleError(SMILESSyntaxError, "An atom must precede a bond closure symbol", state.idx)
+                self.handleError(SMILESSyntaxError, ("An atom must precede a bond closure symbol", state.idx))
             if not self.rulesToIgnore & 32:
                 precedingtext = self.smi[state.smiidx[state.prev[-1].idx]+1:state.idx]
                 if ")" in precedingtext:
-                    self.handleError(SMILESSyntaxError, "Ring closure symbols must immediately follow an atom", state.idx)
+                    self.handleError(SMILESSyntaxError, ("Ring closure symbols must immediately follow an atom", state.idx))
                 if "(" in precedingtext:
-                    self.handleError(SMILESSyntaxError, "Ring closure symbols should not be in parentheses", state.idx)
-            self.handleError(SMILESSyntaxError, self.handleBCSymbol(state), state.idx)
+                    self.handleError(SMILESSyntaxError, ("Ring closure symbols should not be in parentheses", state.idx))
+            self.handleError(SMILESSyntaxError, (self.handleBCSymbol(state), state.idx))
         elif x in '.>':
             self.handleComponent(state)
 
             state.prev[-1] = None
             if x == '.':
-                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
+                self.handleError(SMILESSyntaxError, (self.validateSyntax(state, dot=True), state.idx))
                 state.idx += 1
             elif x == '>':
                 state.reaction_part += 1
                 if state.reaction_part == 3:
-                    self.handleError(SMILESSyntaxError, "Reactions only have three parts", state.idx)
-                self.handleError(SMILESSyntaxError, self.validateSyntax(state, dot=True), state.idx)
+                    self.handleError(SMILESSyntaxError, ("Reactions only have three parts", state.idx))
+                self.handleError(SMILESSyntaxError, (self.validateSyntax(state, dot=True), state.idx))
                 state.idx += 1
         else:
-            self.handleError(SMILESSyntaxError, "Illegal character", state.idx)
+            self.handleError(SMILESSyntaxError, ("Illegal character", state.idx))
 
-    def handleError(self, errtype, msg, idx):
-        """Do nothing if no error msg supplied, otherwise raise an Exception"""
-        if msg:
-            raise errtype(msg, self.smi, idx)
+    def handleError(self, errtype, errinfo):
+        """Do nothing if no errorinfo supplied, otherwise raise an Exception"""
+        if errinfo and errinfo[0]:
+            raise errtype(errinfo[0], self.smi, errinfo[1])
 
     def handleComponent(self, state):
         # Check some conditions at the end of parsing a component
         if not self.rulesToIgnore & 1:
             if state.idx == 0 or self.smi[state.idx-1] in "." or (self.smi[state.idx-1] == '>' and state.reaction_part == 2):
-                self.handleError(SMILESSyntaxError, "Empty molecules are not allowed", state.idx)
+                self.handleError(SMILESSyntaxError, ("Empty molecules are not allowed", state.idx))
         if state.bondchar:
-            self.handleError(SMILESSyntaxError, "An atom must follow a bond symbol", state.idx)
+            self.handleError(SMILESSyntaxError, ("An atom must follow a bond symbol", state.idx))
         if not self.rulesToIgnore & 4 and state.idx > 1 and self.smi[state.idx-1]==')':
-            self.handleError(SMILESSyntaxError, "The final branch should not be within parentheses", state.idx-1)
+            self.handleError(SMILESSyntaxError, ("The final branch should not be within parentheses", state.idx-1))
 
     def validateValence(self, state):
         # ----- Check for unusual valence -------
