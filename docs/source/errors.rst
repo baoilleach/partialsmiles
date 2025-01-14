@@ -66,6 +66,26 @@ Syntax errors can be caught as follows::
             #   C[C(=O)C
             #      ^
 
+Ignore some errors (advanced usage)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you call ``ParseSmiles`` with a non-zero value for the ``rulesToIgnore`` parameter, you can ask the parser not to throw an exception for particular cases. The cases are as follows:
+
+1. Do not allow empty molecules like ``C..C``
+2. Do not allow empty branches like ``C()C``
+3. Require final branches to be without parentheses (as in ``C(O(C))``)
+4. Do not allow a dot within parentheses (e.g. ``C(C.C)C``)
+5. Do not allow bond closures across disconnected components (e.g. ``C1.C1``)
+6. Ring closure symbols must immediately follow atoms (reject ``C(1)CCC1`` and ``C(CCCC1)1``
+7. Reject aromatic bond symbols (i.e. ``:``)
+
+These particular cases are available as options as you may wish to interpret the SMILES string even where these situations occur (possibly after adjusting it).
+
+To specify one or more rules to ignore, set the corresponding bits of an integer. For example, to specify Rule 2 and Rule 5, we use a value of 18 (2\ :sup:`1` | 2\ :sup:`4`)::
+
+  import partialsmiles as ps
+  ps.ParseSmiles("C()CC1CC.C1", partial=False, rulesToIgnore=18)
+
 .. _valence_errors:
 
 Valence errors

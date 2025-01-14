@@ -7,17 +7,18 @@ Installation and Use
 
 The library provides a single API function, ``ParseSmiles``.
 
-.. py:function:: ParseSmiles(smi, partial=False)
+.. py:function:: ParseSmiles(smi, partial=False, rulesToIgnore=0)
 
    Parse a SMILES string, by default treating it as a complete SMILES string.
    Note that even where ``partial`` is set to ``True``, appending a space or
-   a tab causes it to be treated as a complete string.
+   a tab causes it to be treated as a complete string. The return value is
+   a State object which fully describes the state of the parser.
 
 To test, try the following at the Python prompt.::
 
         >>> import partialsmiles as ps
         >>> ps.__version__
-        1.0
+        2.0
         >>> mol = ps.ParseSmiles("CC(", partial=False)
         Traceback (most recent call last):
         ...

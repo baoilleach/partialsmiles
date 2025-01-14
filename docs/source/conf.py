@@ -18,11 +18,11 @@
 # -- Project information -----------------------------------------------------
 
 project = 'partialsmiles'
-copyright = "2019, Noel M O'Boyle"
+copyright = "2019-2025, Noel M O'Boyle"
 author = "Noel M O'Boyle"
 
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+release = '2.0'
 
 
 # -- General configuration ---------------------------------------------------
