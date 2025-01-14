@@ -32,4 +32,4 @@ You should now read the rest of the documentation (there isn't that much) to avo
 
 If you have any problems or find a bug, please file an issue at https://github.com/baoilleach/partialsmiles/issues.
 
-If this library is used to obtain results for publication, please acknowledge its use, including the version and any modifications made. One way to cite it would be ``N.M. O'Boyle. partialsmiles, version 1.0. Available from https://github.com/baoilleach/partialsmiles``.
+If this library is used to obtain results for publication, please acknowledge its use, including the version and any modifications made. One way to cite it would be ``N.M. O'Boyle. partialsmiles, version 2.0. Available from https://github.com/baoilleach/partialsmiles``.
