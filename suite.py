@@ -19,10 +19,10 @@ class ValenceTests(unittest.TestCase):
                 ]
         for smi, val in data:
             sp = SmilesParser(True, 0)
-            sp._store_state = True
-            mol = sp.parse(smi)
+            state = sp.parse(smi)
+            mol = state.mol
             atom = mol.atoms[0]
-            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), val)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, state), val)
         data = [
                 ("C(", 2),
                 ("C(C)(", 3),
@@ -30,27 +30,27 @@ class ValenceTests(unittest.TestCase):
                 ]
         for smi, val in data:
             sp = SmilesParser(True, 0)
-            sp._store_state = True
-            mol = sp.parse(smi)
+            state = sp.parse(smi)
+            mol = state.mol
             atom = mol.atoms[0]
-            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), val)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, state), val)
 
     def testBranched(self):
         smi = "C(C(C)("
         val = [2, 4, 1]
         sp = SmilesParser(True, 0)
-        sp._store_state = True
-        mol = sp.parse(smi)
+        state = sp.parse(smi)
+        mol = state.mol
         for v, atom in zip(val, mol.atoms):
-            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), v)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, state), v)
 
         smi = "C(C(C)"
         val = [2, 3, 1]
         sp = SmilesParser(True, 0)
-        sp._store_state = True
-        mol = sp.parse(smi)
+        state = sp.parse(smi)
+        mol = state.mol
         for v, atom in zip(val, mol.atoms):
-            self.assertEqual(sp.getAdjustedExplicitValence(atom, sp.state), v)
+            self.assertEqual(sp.getAdjustedExplicitValence(atom, state), v)
 
     def testParser(self):
         smis = ["C(C)(C)(C)(C)C", "[N+5]"]
@@ -59,7 +59,7 @@ class ValenceTests(unittest.TestCase):
             self.assertRaises(ValenceError, ParseSmiles, smi, True)
 
     def testInvalid(self):
-        mol = ParseSmiles("[CH3]C", True)
+        state = ParseSmiles("[CH3]C", True)
         self.assertRaises(ValenceError, ParseSmiles, "[CH2]C", True)
         self.assertRaises(ValenceError, ParseSmiles, "[CH3]1C", True)
         self.assertRaises(ValenceError, ParseSmiles, "[CH2]=1C", True)
@@ -68,14 +68,14 @@ class ValenceTests(unittest.TestCase):
         for smi in ["[Eu]C", "[N](=C)(C)(C)C"]:
             self.assertRaises(ValenceError, ParseSmiles, smi, True)
         # TEMPO
-        mol = ParseSmiles("C1(C)(C)N([O])C(C)(C)CCC1", partial=False)
-        mol = ParseSmiles("FC[CH2]", partial=True)
+        state = ParseSmiles("C1(C)(C)N([O])C(C)(C)CCC1", partial=False)
+        state = ParseSmiles("FC[CH2]", partial=True)
 
     def testBugs(self):
         # Don't raise valence errors for the following
         good = ["c1O", "c1cc(sc1="]
         for smi in good:
-            mol = ParseSmiles(smi, partial=True)
+            state = ParseSmiles(smi, partial=True)
 
         self.assertRaises(ValenceError, ParseSmiles, "CN(C)=", True)
         # The following is 5-valent at least, and we only allow 3-valent
@@ -89,9 +89,9 @@ class ValenceTests(unittest.TestCase):
         # Given Rule 3, an open parenthesis implies at least two
         # nbrs.
         self.assertRaises(ValenceError, ParseSmiles, "C1CN1(", True)
-        mol = ParseSmiles("C1CN1(", True, 4)
+        state = ParseSmiles("C1CN1(", True, 4)
         self.assertRaises(ValenceError, ParseSmiles, "CN(=", True)
-        mol = ParseSmiles("CN(=", True, 4)
+        state = ParseSmiles("CN(=", True, 4)
 
     def testBug(self):
         # The latter was failing with a valence error, but the former was
@@ -112,7 +112,8 @@ class ValenceTests(unittest.TestCase):
 class MolTest(unittest.TestCase):
 
     def testBonds(self):
-        mol = ParseSmiles("CCO", False)
+        state = ParseSmiles("CCO", False)
+        mol = state.mol
         self.assertTrue(mol.getBond(mol.atoms[0], mol.atoms[1]))
         self.assertTrue(mol.getBond(mol.atoms[1], mol.atoms[2]))
         self.assertFalse(mol.getBond(mol.atoms[0], mol.atoms[2]))
@@ -124,14 +125,17 @@ class MolTest(unittest.TestCase):
                 ("[CH2--]", -2),
                ]
         for smi, charge in data:
-            mol = ParseSmiles(smi, False)
+            state = ParseSmiles(smi, False)
+            mol = state.mol
             self.assertTrue(mol.atoms[0].charge, charge)
 
     def testAsterisk(self):
-        mol = ParseSmiles("*", True)
+        state = ParseSmiles("*", True)
+        mol = state.mol
         self.assertEqual(mol.atoms[0].element, 0)
         self.assertEqual(mol.atoms[0].implh, 0)
-        mol = ParseSmiles("[*H]", True)
+        state = ParseSmiles("[*H]", True)
+        mol = state.mol
         self.assertEqual(mol.atoms[0].element, 0)
         self.assertEqual(mol.atoms[0].implh, 1)
 
@@ -237,8 +241,8 @@ class ParserTests(unittest.TestCase):
         bad = ["[0CH4]", "[1", "[12", "[123", "[v", "[C@", "[C@@",
                "[CH", "[CH4", "[C+", "[C+2", "[C++", "[C++ "]
         self.check(good, bad)
-        self.assertEqual(ParseSmiles("[12CH4]").atoms[0].isotope, 12)
-        self.assertEqual(ParseSmiles("[123CH4]").atoms[0].isotope, 123)
+        self.assertEqual(ParseSmiles("[12CH4]").mol.atoms[0].isotope, 12)
+        self.assertEqual(ParseSmiles("[123CH4]").mol.atoms[0].isotope, 123)
 
     def testBrackets(self):
         good = ["[16CH4]", "[NH3++]", "C[C@@H](C)C"]
@@ -277,22 +281,26 @@ C==C""".split("\n")
 class KekulizationTests(unittest.TestCase):
 
     def testBasic(self):
-        mol = ParseSmiles("c1ccccc1", False) # Will be kekulized
+        state = ParseSmiles("c1ccccc1", False) # Will be kekulized
+        mol = state.mol
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 3)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
 
-        mol = ParseSmiles("c1ccccc1.", partial=True) # Will be kekulized
+        state = ParseSmiles("c1ccccc1.", partial=True) # Will be kekulized
+        mol = state.mol
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 3)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
 
-        mol = ParseSmiles("c1ccccc1", True) # Won't be kekulized
+        state = ParseSmiles("c1ccccc1", True) # Won't be kekulized
+        mol = state.mol
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 6)
         self.assertEqual(sum(bond.arom for bond in mol.bonds), 6)
 
-        mol = ParseSmiles("c1ccccc1C", True) # Will be kekulized
+        state = ParseSmiles("c1ccccc1C", True) # Will be kekulized
+        mol = state.mol
         bondorders = [bond.order for bond in mol.bonds]
         self.assertEqual(sum(x==1 for x in bondorders), 4)
         self.assertEqual(sum(x==2 for x in bondorders), 3)
@@ -304,7 +312,7 @@ class KekulizationTests(unittest.TestCase):
                  "c12c3c4c5c6c7c8c5c9c%10c4c1c%11c%12c%13c2c%14c%15c3c6c%16c%15c%17c%18c%19c%16c7c%20c%19c%21c%22c%18c%23c%17c%14c%13c%24c%23c%25c%22c%26c%27c%28c%29c(c%12c%24c%28%25)-c%11c%10C%30%31C%29(c%27c-%32c(c%26%21)c%20c8c%32c%309)CC(=N)CC%31"
                  ]
         for smi in smis:
-            mol = ParseSmiles(smi, False)
+            state = ParseSmiles(smi, False)
 
     def testFailures(self):
         smis = [
@@ -329,21 +337,23 @@ class KekulizationTests(unittest.TestCase):
                 "[s-]1(O)cccc1"   # invented molecule
                 ]
         for smi in smis:
-            mol = ParseSmiles(smi, partial=False)
+            state = ParseSmiles(smi, partial=False)
 
 class AromaticBondTest(unittest.TestCase):
     
     def testBasic(self):
         smis = ["cc", "c:c", "C:C"] # What about c=c? Is this [C]=[C]?
         for smi in smis:
-            mol = ParseSmiles(smi, rulesToIgnore=64)
+            state = ParseSmiles(smi, rulesToIgnore=64)
+            mol = state.mol
             self.assertEqual(2, mol.bonds[0].order)
             self.assertTrue(mol.bonds[0].arom)
 
     def testRingClosures(self):
         smis = ["c1.c1", "c1.c:1", "C1.C:1"]
         for smi in smis:
-            mol = ParseSmiles(smi, rulesToIgnore=16|64)
+            state = ParseSmiles(smi, rulesToIgnore=16|64)
+            mol = state.mol
             self.assertEqual(2, mol.bonds[0].order)
             self.assertTrue(mol.bonds[0].arom)
 
@@ -355,11 +365,11 @@ class ReactionTests(unittest.TestCase):
         empty = ["C>>", ">>N", ">O>", "C.>>.N"]
         bad = ["C>O>N>S"]
         for smi in good:
-            mol = ParseSmiles(smi, partial=False)
+            state = ParseSmiles(smi, partial=False)
         for smi in bad + empty:
             self.assertRaises(SMILESSyntaxError, ParseSmiles, smi, partial=False)
         for smi in empty:
-            mol = ParseSmiles(smi, partial=False, rulesToIgnore=1)
+            state = ParseSmiles(smi, partial=False, rulesToIgnore=1)
 
 if __name__ == "__main__":
     unittest.main()

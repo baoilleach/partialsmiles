@@ -31,6 +31,9 @@ class Bond:
     def getNbr(self, atom):
         return self.beg if self.end==atom else self.end
 
+    def __repr__(self):
+        return "Bond(beg={},end={},idx={},order={},arom={}".format(self.beg, self.end, self.idx, self.order, self.arom)
+
 class Atom:
     __slots__ = ('element', 'charge', 'implh', 'arom', 'idx', 'bonds', 'isotope')
     def __init__(self, element, charge=0):
@@ -43,7 +46,7 @@ class Atom:
         self.isotope = 0
 
     def __repr__(self):
-        return "Atom(elem={},chg={},idx={})".format(self.element, self.charge, self.idx)
+        return "Atom(elem={},chg={},idx={},implh={},arom={})".format(self.element, self.charge, self.idx, self.implh, self.arom)
 
     def getExplicitDegree(self):
         return len(self.bonds)
@@ -86,7 +89,7 @@ class Molecule:
         return None
 
     def __repr__(self):
-        return "Molecule(atoms={})".format([str(x) for x in self.atoms])
+        return "Molecule(atoms={},bonds={})".format([str(x) for x in self.atoms], [str(x) for x in self.bonds])
 
 class State:
     """The state of it"""
@@ -102,6 +105,11 @@ class State:
         self.bondchar = None
         self.parsing_atom = False
 
+    def __repr__(self):
+        """Look at the state of it"""
+        out = f"{self.mol}\n"
+        out += f"{self.openbonds=}\n{self.hcount=}\n{self.idx=}\n{self.prev=}\n{self.smiidx=}\n{self.reaction_part=}\n{self.bondchar=}\n{self.parsing_atom=}"
+        return out
 
 class SmilesParser:
 
@@ -113,8 +121,6 @@ class SmilesParser:
         self.smi = smi
         self.N = len(smi)
         state = State()
-        if getattr(self, "_store_state", False):
-            self.state = state # used for testing
 
         while state.idx < self.N:
             self.parse_token(state)
@@ -131,8 +137,8 @@ class SmilesParser:
 
         self.handleError(ValenceError, self.validateValence(state), state.idx)
         self.handleError(KekulizationFailure, self.validateKekulization(state.mol, state), state.idx)
-        state.mol.openbonds = dict(state.openbonds)
-        return state.mol
+        
+        return state
 
     def parse_token(self, state):
         x = self.smi[state.idx]
@@ -551,5 +557,5 @@ def ToElement(symbol):
 
 def ParseSmiles(smi, partial=False, rulesToIgnore=0):
     sp = SmilesParser(partial, rulesToIgnore);
-    mol = sp.parse(smi)
-    return mol
+    state = sp.parse(smi)
+    return state
